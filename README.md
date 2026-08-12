@@ -1,0 +1,219 @@
+# RadioFM
+
+Радио для [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat). Поддержка: YouTube, SoundCloud, Dropbox, Discord и прямые ссылки. Радио можно включать в руках или на земле.
+
+A radio for [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat). Supports: YouTube, SoundCloud, Dropbox, Discord and direct links. You can play the radio whilst holding it or whilst it’s on the ground.
+
+| | |
+|---|---|
+| Minecraft | 1.21.1 |
+| Загрузчик · Loader | NeoForge |
+| Требуется · Requires | [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) |
+| Лицензия · License | MIT |
+
+[Русский](#русский) · [English](#english)
+
+---
+
+## Русский
+
+### Что умеет
+
+- YouTube, SoundCloud, Discord, Dropbox и прямых ссылок на файлы
+- Списки треков файлом `.txt`, `.m3u` или `.pls`
+- Перемешивание, повтор трека, пауза, перемотка
+- Радио работает в руке или на земле — звук идёт с игроком или идёт из точки мира
+- Своя категория громкости в настройках голосового чата
+
+### Как получить
+
+Скрафтить или выдать командой. Рецепт принимает любую бочку и любой аметист, включая модовые.
+
+![Рецепт: громоотвод, доски, бочка и аметист](docs/craft.png)
+
+Громоотвод сверху, доски по бокам от бочки, аметист снизу.
+
+### Окно настроек
+
+![Окно радио: название станции, список треков, кнопки управления](docs/gui.png)
+
+Сверху название станции и список треков: кнопка слева зацикливает трек, крестик убирает строку.
+Снизу загрузка плейлиста ссылкой, перемотка, пауза, воспроизведение и перемешивание. Под кнопками
+идёт время текущего трека.
+
+### Управление
+
+| Действие | Что делает |
+|---|---|
+| ПКМ по радио в руке или по поставленному | включить или выключить |
+| Shift + ПКМ | открыть настройки |
+| Shift + колесо мыши | слышимость, шаг 4 блока |
+| Shift + Ctrl + колесо | слышимость, шаг 1 блок |
+
+Колесо действует на радио под прицелом, а если его там нет — на то, что в руке.
+
+### Команды
+
+```
+/radiofm give                    выдать радио
+/radiofm give 64                 выдать со слышимостью 64 блока
+/radiofm give "Название"         выдать с названием станции
+/radiofm give "Название" 64      и то, и другое
+/radiofm range <блоки> [x y z]   слышимость радио в руке или по координатам
+/radiofm ban <игрок>             запретить игроку пользоваться радио
+/radiofm unban <игрок>           снять запрет
+/radiofm bans                    список запретов
+```
+
+Запрет отбирает радио целиком: включение, настройки, слышимость и даже поломку чужого радио.
+Список хранится в сохранении мира.
+
+### Игровые правила
+
+```
+/gamerule radiofm:max 3            сколько радио игрок держит включёнными сразу
+/gamerule radiofm:maxRadius 64     потолок слышимости
+```
+
+`radiofm:max` считает и поставленные игроком радио, и то, что играет у него в руке.
+
+### Настройки
+
+`config/radiofm-server.toml`
+
+| Ключ | По умолчанию | Что делает |
+|---|---|---|
+| `radio.range` | 48 | слышимость, если у радио не задана своя |
+| `radio.skinUrl` | пусто | скин головы, ссылка на `textures.minecraft.net` |
+| `radio.showMusicParticles` | true | нотки над играющим радио |
+| `radio.musicParticleFrequency` | 1000 | пауза между нотками, мс |
+| `security.maxActiveRadios` | 32 | сколько радио играет одновременно на сервере |
+| `security.maxTracksPerRadio` | 128 | сколько треков берётся из плейлиста |
+| `security.maxPlaylistBytes` | 262144 | сколько байт читается из файла плейлиста |
+| `security.allowPrivateNetworks` | false | пускать радио по адресам внутри сети сервера |
+
+### Про безопасность
+
+Ссылку в радио вписывает игрок, а запрос по ней делает сервер. Поэтому адреса внутри сети —
+`127.0.0.1`, локальная сеть хостера, метаданные облака — отклоняются. Проверка стоит на уровне
+соединения, так что перенаправления и подмена DNS её не обходят.
+
+`allowPrivateNetworks` включайте, только если музыка лежит в вашей же сети.
+
+### Сборка
+
+```
+./gradlew build
+```
+
+Джарник появится в `build/libs/`.
+
+---
+
+## English
+
+### What it does
+
+- Playlists from YouTube, SoundCloud, Bandcamp, Vimeo, Twitch, Dropbox and direct file links
+- Track lists from a `.txt`, `.m3u` or `.pls` file
+- Shuffle, repeat one track, pause, skip
+- Carry a radio in hand or place it — the sound follows the player or stays at a point in the world
+- Its own volume category in the voice chat settings
+
+### Getting one
+
+Craft it or hand it out with a command. The recipe takes any barrel and any amethyst, modded ones
+included.
+
+![Recipe: lightning rod, planks, barrel and amethyst](docs/craft.png)
+
+A lightning rod on top, planks either side of a barrel, an amethyst below.
+
+### The screen
+
+![The radio screen: station name, track list, playback buttons](docs/gui.png)
+
+The station name and the track list are at the top: the button on the left loops a track, the cross
+removes the row. Below are playlist loading, skip, pause, play and shuffle, with the time of the
+current track underneath.
+
+### Controls
+
+| Input | Effect |
+|---|---|
+| Right click a radio, held or placed | switch it on or off |
+| Shift + right click | open the settings |
+| Shift + mouse wheel | range, four blocks a notch |
+| Shift + ctrl + wheel | range, one block a notch |
+
+The wheel acts on the radio under the crosshair, or on the one in hand when there is none.
+
+### Commands
+
+```
+/radiofm give                    hand out a radio
+/radiofm give 64                 hand one out audible 64 blocks away
+/radiofm give "Name"             hand one out named after a station
+/radiofm give "Name" 64          both at once
+/radiofm range <blocks> [x y z]  set the range of a held radio, or one at a position
+/radiofm ban <player>            take radios away from a player
+/radiofm unban <player>          give them back
+/radiofm bans                    list who is banned
+```
+
+A ban covers everything: switching on, settings, range, and breaking someone else's radio. The list
+lives in the world save and travels with it.
+
+### Game rules
+
+```
+/gamerule radiofm:max 3            radios one player may have playing at once
+/gamerule radiofm:maxRadius 64     the ceiling on range
+```
+
+`radiofm:max` counts both the radios a player placed and the one playing in their hand.
+
+### Settings
+
+`config/radiofm-server.toml`
+
+| Key | Default | Meaning |
+|---|---|---|
+| `radio.range` | 48 | range for radios without one of their own |
+| `radio.skinUrl` | empty | head skin, a link to `textures.minecraft.net` |
+| `radio.showMusicParticles` | true | notes above a playing radio |
+| `radio.musicParticleFrequency` | 1000 | gap between notes, ms |
+| `security.maxActiveRadios` | 32 | radios playing at once across the server |
+| `security.maxTracksPerRadio` | 128 | tracks taken from one playlist |
+| `security.maxPlaylistBytes` | 262144 | bytes read from a playlist file |
+| `security.allowPrivateNetworks` | false | let radios reach addresses inside the server's network |
+
+### On security
+
+The player writes the link and the server is what fetches it. Addresses inside the network —
+`127.0.0.1`, the host's LAN, cloud metadata — are therefore refused. The check sits at the
+connection, so redirects and DNS rebinding do not get around it.
+
+Turn `allowPrivateNetworks` on only when the music sits in your own network.
+
+### Building
+
+```
+./gradlew build
+```
+
+The jar lands in `build/libs/`.
+
+---
+
+## Лицензия · License
+
+MIT, см. [LICENSE](LICENSE).
+
+Это самостоятельная реализация, а не форк. Идея «радио в голосовом чате» принадлежит
+[henkelmax](https://github.com/henkelmax); его мод распространяется под All Rights Reserved,
+и ни строки его кода здесь нет.
+
+This is an independent implementation, not a fork. The idea of a radio inside voice chat is
+[henkelmax](https://github.com/henkelmax)'s; his mod is All Rights Reserved and none of its code is
+here.
