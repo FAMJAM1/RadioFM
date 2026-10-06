@@ -1,0 +1,89 @@
+plugins {
+    id("java")
+    id("net.neoforged.moddev") version "2.0.+"
+    id("com.gradleup.shadow") version "9.4.0"
+}
+
+String mod_version = "${mod_base_version}+${mod_version_meta}"
+
+base.archivesName = archives_base_name
+group = maven_group
+version = mod_version
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url = 'https://maven.maxhenkel.de/repository/public' }
+    maven { url = 'https://maven.lavalink.dev/releases' }
+    maven { url = 'https://maven.lavalink.dev/snapshots' }
+}
+
+neoForge {
+    version = neoforge_version
+
+    mods {
+        radiofm {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+configurations {
+    shadow
+    implementation.extendsFrom shadow
+}
+
+dependencies {
+    compileOnly "de.maxhenkel.voicechat:voicechat-api:${voicechat_api_version}"
+
+    // RU: LavaPlayer хочет httpclient 4.5.14, игра пиннит 4.5.13 - берём версию игры
+    // US: LavaPlayer wants httpclient 4.5.14, the game pins 4.5.13 - take the game's
+    implementation("dev.arbjerg:lavaplayer:${lavaplayer_version}") {
+        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+    }
+    shadow("dev.arbjerg:lavaplayer:${lavaplayer_version}") {
+        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+    }
+
+    implementation("dev.lavalink.youtube:common:${youtube_source_version}") {
+        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+    }
+    shadow("dev.lavalink.youtube:common:${youtube_source_version}") {
+        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+    }
+
+    implementation "org.apache.httpcomponents:httpclient:${httpclient_version}"
+    shadow "org.apache.httpcomponents:httpclient:${httpclient_version}"
+}
+
+processResources {
+    filteringCharset "UTF-8"
+    filesMatching("META-INF/neoforge.mods.toml") {
+        expand project.properties
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = 'UTF-8'
+    it.options.release = 21
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+
+shadowJar {
+    configurations = [project.configurations.shadow]
+    archiveClassifier = ''
+
+    relocate 'org.apache.http', "dev.famjam.${mod_id}.apache.http"
+    relocate 'org.slf4j', "dev.famjam.${mod_id}.slf4j"
+
+    // RU: только то, что реально едет с httpclient; весь org.apache.commons нельзя -
+    //     под него попадёт lang3, который даёт игра, и ссылки на него сломаются
+    // US: only what actually travels with httpclient; not all of org.apache.commons -
+    //     that catches lang3, which the game provides, and breaks references to it
+    relocate 'org.apache.commons.codec', "dev.famjam.${mod_id}.commons.codec"
+    relocate 'org.apache.commons.io', "dev.famjam.${mod_id}.commons.io"
+    relocate 'org.apache.commons.logging', "dev.famjam.${mod_id}.commons.logging"
+}

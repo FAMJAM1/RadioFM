@@ -1,0 +1,10 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        maven { url = 'https://maven.neoforged.net/releases' }
+        maven { url = 'https://maven.maxhenkel.de/repository/public' }
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'RadioFM'

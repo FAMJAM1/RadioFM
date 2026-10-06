@@ -1,0 +1,64 @@
+{
+  "variants": {
+    "rotation=0": {
+      "model": "radiofm:block/radio"
+    },
+    "rotation=1": {
+      "model": "radiofm:block/radio_225"
+    },
+    "rotation=2": {
+      "model": "radiofm:block/radio_45"
+    },
+    "rotation=3": {
+      "model": "radiofm:block/radio_675",
+      "y": 90
+    },
+    "rotation=4": {
+      "model": "radiofm:block/radio",
+      "y": 90
+    },
+    "rotation=5": {
+      "model": "radiofm:block/radio_225",
+      "y": 90
+    },
+    "rotation=6": {
+      "model": "radiofm:block/radio_45",
+      "y": 90
+    },
+    "rotation=7": {
+      "model": "radiofm:block/radio_675",
+      "y": 180
+    },
+    "rotation=8": {
+      "model": "radiofm:block/radio",
+      "y": 180
+    },
+    "rotation=9": {
+      "model": "radiofm:block/radio_225",
+      "y": 180
+    },
+    "rotation=10": {
+      "model": "radiofm:block/radio_45",
+      "y": 180
+    },
+    "rotation=11": {
+      "model": "radiofm:block/radio_675",
+      "y": 270
+    },
+    "rotation=12": {
+      "model": "radiofm:block/radio",
+      "y": 270
+    },
+    "rotation=13": {
+      "model": "radiofm:block/radio_225",
+      "y": 270
+    },
+    "rotation=14": {
+      "model": "radiofm:block/radio_45",
+      "y": 270
+    },
+    "rotation=15": {
+      "model": "radiofm:block/radio_675"
+    }
+  }
+}
