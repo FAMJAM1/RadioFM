@@ -1,14 +1,14 @@
 # RadioFM
 
-A radio for [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat). Supports: YouTube, SoundCloud, Dropbox, Discord and direct links. You can play the radio whilst holding it or whilst it’s on the ground.
+A radio for [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) or [Plasmo Voice](https://modrinth.com/plugin/plasmo-voice). Supports: YouTube, SoundCloud, Dropbox, Discord and direct links. You can play the radio whilst holding it or placed as a block.
 
-Радио для [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat). Поддержка: YouTube, SoundCloud, Dropbox, Discord и прямые ссылки. Радио можно включать в руках или на земле.
+Радио для [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) или [Plasmo Voice](https://modrinth.com/plugin/plasmo-voice). Поддержка: YouTube, SoundCloud, Dropbox, Discord и прямые ссылки. Радио можно включать в руках или на блоке.
 
 | | |
 |---|---|
 | Minecraft | 1.21.1 |
 | Loader · Загрузчик | NeoForge |
-| Requires · Требуется | [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) |
+| Requires · Требуется | [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) or · или [Plasmo Voice](https://modrinth.com/plugin/plasmo-voice) |
 | License · Лицензия | MIT |
 
 [English](#english) · [Русский](#русский)
@@ -22,8 +22,9 @@ A radio for [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat). 
 - Playlists from YouTube, SoundCloud, Discord, Dropbox and direct file links
 - Track lists from a `.txt` or `.m3u` file
 - Shuffle, repeat one track, pause, skip
-- Carry a radio in hand or place it — the sound follows the player or stays at a point in the world
+- Carry a radio in hand or place it as a block - the sound follows the player or stays at a point in the world
 - Its own volume category in the voice chat settings
+- Works with Simple Voice Chat or Plasmo Voice, whichever the server has
 
 ### Getting one
 
@@ -64,10 +65,18 @@ The wheel acts on the radio under the crosshair, or on the one in hand when ther
 /radiofm ban <player>            take radios away from a player
 /radiofm unban <player>          give them back
 /radiofm bans                    list who is banned
+/radiofm choice <svc|pv>         pick the voice mod when both are installed
 ```
 
 A ban covers everything: switching on, settings, range, and breaking someone else's radio. The list
 lives in the world save and travels with it.
+
+### Voice mods
+
+The radio uses whichever voice mod is installed. With both, it asks for a choice: an operator, or a
+player in their own world with cheats on, runs `/radiofm choice svc` or `/radiofm choice pv`. In a
+world without cheats, remove one of the two mods and rejoin. The choice is kept in
+`config/radiofm-server.toml`.
 
 ### Game rules
 
@@ -91,11 +100,12 @@ lives in the world save and travels with it.
 | `security.maxTracksPerRadio` | 128 | tracks taken from one playlist |
 | `security.maxPlaylistBytes` | 262144 | bytes read from a playlist file |
 | `security.allowPrivateNetworks` | false | let radios reach addresses inside the server's network |
+| `voice.voiceMod` | empty | `svc` or `plasmo` when both voice mods are installed |
 
 ### On security
 
-The player writes the link and the server is what fetches it. Addresses inside the network —
-`127.0.0.1`, the host's LAN, cloud metadata — are therefore refused. The check sits at the
+The player writes the link and the server is what fetches it. Addresses inside the network -
+`127.0.0.1`, the host's LAN, cloud metadata - are therefore refused. The check sits at the
 connection, so redirects and DNS rebinding do not get around it.
 
 Turn `allowPrivateNetworks` on only when the music sits in your own network.
@@ -117,8 +127,9 @@ The jar lands in `build/libs/`.
 - YouTube, SoundCloud, Discord, Dropbox и прямых ссылок на файлы
 - Списки треков файлом `.txt` или `.m3u`
 - Перемешивание, повтор трека, пауза, перемотка
-- Радио работает в руке или на земле — звук идёт с игроком или идёт из точки мира
+- Радио работает в руке или на блоке - звук идёт с игроком или из точки мира
 - Своя категория громкости в настройках голосового чата
+- Работает с Simple Voice Chat или Plasmo Voice, смотря что стоит на сервере
 
 ### Как получить
 
@@ -145,7 +156,7 @@ The jar lands in `build/libs/`.
 | Shift + колесо мыши | слышимость, шаг 4 блока |
 | Shift + Ctrl + колесо | слышимость, шаг 1 блок |
 
-Колесо действует на радио под прицелом, а если его там нет — на то, что в руке.
+Колесо действует на радио под прицелом, а если его там нет - на то, что в руке.
 
 ### Команды
 
@@ -158,10 +169,17 @@ The jar lands in `build/libs/`.
 /radiofm ban <игрок>             запретить игроку пользоваться радио
 /radiofm unban <игрок>           снять запрет
 /radiofm bans                    список запретов
+/radiofm choice <svc|pv>         выбрать голосовой мод, если стоят оба
 ```
 
 Запрет отбирает радио целиком: включение, настройки, слышимость и даже поломку чужого радио.
 Список хранится в сохранении мира.
+
+### Голосовые моды
+
+Радио работает через тот голосовой мод, что установлен. Если стоят оба, оно попросит выбрать:
+оператор или игрок в своём мире с читами вводит `/radiofm choice svc` или `/radiofm choice pv`. В мире
+без читов уберите один из двух модов и зайдите снова. Выбор хранится в `config/radiofm-server.toml`.
 
 ### Игровые правила
 
@@ -185,11 +203,12 @@ The jar lands in `build/libs/`.
 | `security.maxTracksPerRadio` | 128 | сколько треков берётся из плейлиста |
 | `security.maxPlaylistBytes` | 262144 | сколько байт читается из файла плейлиста |
 | `security.allowPrivateNetworks` | false | пускать радио по адресам внутри сети сервера |
+| `voice.voiceMod` | пусто | `svc` или `plasmo`, если стоят оба голосовых мода |
 
 ### Про безопасность
 
-Ссылку в радио вписывает игрок, а запрос по ней делает сервер. Поэтому адреса внутри сети —
-`127.0.0.1`, локальная сеть хостера, метаданные облака — отклоняются. Проверка стоит на уровне
+Ссылку в радио вписывает игрок, а запрос по ней делает сервер. Поэтому адреса внутри сети -
+`127.0.0.1`, локальная сеть хостера, метаданные облака - отклоняются. Проверка стоит на уровне
 соединения, так что перенаправления и подмена DNS её не обходят.
 
 `allowPrivateNetworks` включайте, только если музыка лежит в вашей же сети.
