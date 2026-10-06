@@ -1,7 +1,6 @@
 package dev.famjam.radiofm.events;
 
 import dev.famjam.radiofm.RadioFM;
-import dev.famjam.radiofm.RadioVoicechatPlugin;
 import dev.famjam.radiofm.network.RadioServerHandlers;
 import dev.famjam.radiofm.network.RadioStatusPacket;
 import dev.famjam.radiofm.radio.RadioBans;
@@ -96,7 +95,7 @@ public class RadioEvents {
                 player.displayClientMessage(Component.translatable("message.radiofm.no_tracks"), true);
                 return;
             }
-            if (RadioServerHandlers.atRadioLimit(player)) {
+            if (RadioServerHandlers.refuseToStart(player)) {
                 return;
             }
         }
@@ -278,6 +277,6 @@ public class RadioEvents {
     @SubscribeEvent
     public static void onServerStopping(ServerStoppingEvent event) {
         RadioManager.get().stopAll();
-        RadioVoicechatPlugin.reset();
+        dev.famjam.radiofm.voice.VoiceBackends.reset();
     }
 }

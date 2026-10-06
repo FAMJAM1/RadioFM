@@ -1,11 +1,9 @@
 package dev.famjam.radiofm.radio;
 
-import de.maxhenkel.voicechat.api.VoicechatServerApi;
-import de.maxhenkel.voicechat.api.audiochannel.AudioChannel;
-import de.maxhenkel.voicechat.api.audiochannel.AudioPlayer;
-import de.maxhenkel.voicechat.api.opus.OpusEncoderMode;
 import dev.famjam.radiofm.RadioFM;
-import dev.famjam.radiofm.RadioVoicechatPlugin;
+import dev.famjam.radiofm.voice.VoiceBackend;
+import dev.famjam.radiofm.voice.VoiceBackends;
+import dev.famjam.radiofm.voice.VoiceOutput;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,9 +11,9 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
- * RU: {@link #get()} зовёт аудиопоток чата каждые 20мс - блокировать нельзя,
+ * RU: {@link #get()} зовёт аудиопоток голосового мода каждые 20мс - блокировать нельзя,
  *     сеть уходит в фоновые потоки, до готовности отдаём тишину
- * US: {@link #get()} runs on the chat audio thread every 20ms - never block it,
+ * US: {@link #get()} runs on the voice mod's audio thread every 20ms - never block it,
  *     network work goes to background threads and silence fills the gap
  */
 public abstract class RadioStream implements Supplier<short[]> {
@@ -38,8 +36,7 @@ public abstract class RadioStream implements Supplier<short[]> {
     private volatile boolean skipRequested;
     private volatile int requestedIndex = -1;
 
-    private volatile AudioChannel channel;
-    private volatile AudioPlayer audioPlayer;
+    private volatile VoiceOutput output;
     private volatile AudioDecoder decoder;
     private volatile AudioDecoder pendingDecoder;
     private volatile int pendingIndex = -1;
@@ -68,11 +65,12 @@ public abstract class RadioStream implements Supplier<short[]> {
         return List.copyOf(resolved);
     }
 
-    protected abstract AudioChannel openChannel(VoicechatServerApi api);
+    protected abstract VoiceOutput openOutput(VoiceBackend backend);
 
     protected abstract String threadPrefix();
 
-    protected void onStartFailed() {
+    /** RU: трек грузится в фоне, поэтому о сбоях сообщаем отсюда | US: tracks load in the background, so failures are reported from here */
+    protected void tell(String translationKey) {
     }
 
     protected void onFrame() {
@@ -89,23 +87,22 @@ public abstract class RadioStream implements Supplier<short[]> {
             RadioFM.LOGGER.warn("Radio {} has no tracks to play", id);
             return;
         }
-        RadioVoicechatPlugin.runWhenReady(this::openAndPlay);
+        VoiceBackend backend = VoiceBackends.current();
+        if (backend == null) {
+            tell("message.radiofm.no_voice");
+            return;
+        }
+        backend.runWhenReady(() -> openAndPlay(backend));
     }
 
-    private void openAndPlay() {
+    private void openAndPlay(VoiceBackend backend) {
         try {
-            VoicechatServerApi api = RadioVoicechatPlugin.voicechatServerApi;
-            if (api == null) {
-                return;
-            }
-
-            AudioChannel opened = openChannel(api);
+            VoiceOutput opened = openOutput(backend);
             if (opened == null) {
                 RadioFM.LOGGER.error("Could not open an audio channel for radio {}", id);
                 return;
             }
-            channel = opened;
-            audioPlayer = api.createAudioPlayer(opened, api.createEncoder(OpusEncoderMode.AUDIO), this);
+            output = opened;
 
             loadFirstTrackAsync();
         } catch (Exception e) {
@@ -121,18 +118,18 @@ public abstract class RadioStream implements Supplier<short[]> {
                 skipRequested = false;
                 loadCurrentTrack();
 
-                AudioPlayer player = audioPlayer;
-                if (player == null) {
+                VoiceOutput out = output;
+                if (out == null) {
                     return; // RU: успели выключить | US: switched off meanwhile
                 }
-                // RU: строго до startPlaying(): null из get() чат считает концом потока
-                // US: before startPlaying(): null from get() means end of stream to the chat
+                // RU: строго до start(): null из get() голосовой мод считает концом потока
+                // US: before start(): null from get() means end of stream to the voice mod
                 active = true;
-                player.startPlaying();
+                out.start();
             } catch (Exception e) {
                 active = false;
                 RadioFM.LOGGER.error("Failed to start radio {}", id, e);
-                onStartFailed();
+                tell("message.radiofm.start_error");
             }
         }, threadPrefix() + "-start-" + id);
         thread.setDaemon(true);
@@ -143,17 +140,16 @@ public abstract class RadioStream implements Supplier<short[]> {
         active = false;
         paused = false;
 
-        AudioPlayer player = audioPlayer;
-        audioPlayer = null;
-        if (player != null) {
-            player.stopPlaying();
+        VoiceOutput out = output;
+        output = null;
+        if (out != null) {
+            out.stop();
         }
 
         closeQuietly(decoder);
         decoder = null;
         discardPending();
         converter = null;
-        channel = null;
     }
 
     private void loadCurrentTrack() throws Exception {
@@ -247,7 +243,7 @@ public abstract class RadioStream implements Supplier<short[]> {
                 decoder = loaded;
             } catch (Exception e) {
                 RadioFM.LOGGER.warn("Failed to load track {} on skip", index, e);
-                onStartFailed();
+                tell("message.radiofm.start_error");
             } finally {
                 trackLoading = false;
                 closeQuietly(old);

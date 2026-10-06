@@ -87,6 +87,7 @@ public class RadioFM {
 
     public RadioFM(IEventBus modEventBus, net.neoforged.fml.ModContainer container) {
         container.registerConfig(ModConfig.Type.SERVER, ServerConfig.SPEC, MODID + "-server.toml");
+        dev.famjam.radiofm.voice.VoiceBackends.select();
 
         COMPONENTS.register(modEventBus);
         ATTACHMENTS.register(modEventBus);

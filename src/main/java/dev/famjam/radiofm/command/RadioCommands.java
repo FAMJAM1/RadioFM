@@ -12,6 +12,7 @@ import dev.famjam.radiofm.radio.PlacedRadios;
 import dev.famjam.radiofm.radio.RadioManager;
 import dev.famjam.radiofm.radio.RadioItem;
 import dev.famjam.radiofm.radio.RadioStation;
+import dev.famjam.radiofm.voice.VoiceBackends;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.GameProfileArgument;
@@ -58,6 +59,11 @@ public final class RadioCommands {
                                 .executes(ctx -> setBanned(ctx, false))))
                 .then(Commands.literal("bans")
                         .executes(RadioCommands::listBans))
+                .then(Commands.literal("choice")
+                        .then(Commands.literal("svc")
+                                .executes(ctx -> chooseVoiceMod(ctx, VoiceBackends.SVC, "Simple Voice Chat")))
+                        .then(Commands.literal("pv")
+                                .executes(ctx -> chooseVoiceMod(ctx, VoiceBackends.PLASMO, "Plasmo Voice"))))
                 .then(Commands.literal("range")
                         .then(Commands.argument("blocks", FloatArgumentType.floatArg(1F, 512F))
                                 .executes(ctx -> setHeldRange(ctx, FloatArgumentType.getFloat(ctx, "blocks")))
@@ -65,6 +71,18 @@ public final class RadioCommands {
                                         .executes(ctx -> setBlockRange(ctx,
                                                 BlockPosArgument.getLoadedBlockPos(ctx, "pos"),
                                                 FloatArgumentType.getFloat(ctx, "blocks")))))));
+    }
+
+    private static int chooseVoiceMod(CommandContext<CommandSourceStack> ctx, String mod, String title) {
+        CommandSourceStack source = ctx.getSource();
+        if (!VoiceBackends.bothInstalled()) {
+            source.sendFailure(Component.translatable("message.radiofm.voice_choice_not_needed"));
+            return 0;
+        }
+        RadioFM.SERVER_CONFIG.voiceMod.set(mod);
+        RadioFM.SERVER_CONFIG.voiceMod.save();
+        source.sendSuccess(() -> Component.translatable("message.radiofm.voice_chosen", title), true);
+        return 1;
     }
 
     private static int give(CommandContext<CommandSourceStack> ctx, String stationName, float range)

@@ -1,11 +1,8 @@
 package dev.famjam.radiofm.radio;
 
-import de.maxhenkel.voicechat.api.Position;
-import de.maxhenkel.voicechat.api.VoicechatServerApi;
-import de.maxhenkel.voicechat.api.audiochannel.AudioChannel;
-import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
 import dev.famjam.radiofm.RadioFM;
-import dev.famjam.radiofm.RadioVoicechatPlugin;
+import dev.famjam.radiofm.voice.VoiceBackend;
+import dev.famjam.radiofm.voice.VoiceOutput;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -36,18 +33,8 @@ public class BlockRadioStream extends RadioStream {
     }
 
     @Override
-    protected AudioChannel openChannel(VoicechatServerApi api) {
-        Position pos = api.createPosition(
-                position.getX() + 0.5D, position.getY() + 0.5D, position.getZ() + 0.5D);
-
-        LocationalAudioChannel channel = api.createLocationalAudioChannel(
-                UUID.randomUUID(), api.fromServerLevel(level), pos);
-        if (channel == null) {
-            return null;
-        }
-        channel.setDistance(configuredRange());
-        channel.setCategory(RadioVoicechatPlugin.RADIOS_CATEGORY);
-        return channel;
+    protected VoiceOutput openOutput(VoiceBackend backend) {
+        return backend.openAt(level, position, configuredRange(), this);
     }
 
     @Override
@@ -57,7 +44,7 @@ public class BlockRadioStream extends RadioStream {
 
     /** RU: как у радио в руке, пишем тому, кто включил | US: as with a held radio, told to whoever switched it on */
     @Override
-    protected void onStartFailed() {
+    protected void tell(String translationKey) {
         if (owner == null) {
             return;
         }
@@ -65,7 +52,7 @@ public class BlockRadioStream extends RadioStream {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(owner);
             if (player != null) {
                 player.displayClientMessage(
-                        Component.translatable("message.radiofm.start_error").withStyle(ChatFormatting.RED), true);
+                        Component.translatable(translationKey).withStyle(ChatFormatting.RED), true);
             }
         });
     }
