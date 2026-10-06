@@ -11,6 +11,7 @@ public class ServerConfig {
     public final ModConfigSpec.DoubleValue radioRange;
     public final ModConfigSpec.BooleanValue showMusicParticles;
     public final ModConfigSpec.IntValue musicParticleFrequency;
+    public final ModConfigSpec.ConfigValue<String> voiceMod;
 
     public ServerConfig(ModConfigSpec.Builder builder) {
         builder.push("security");
@@ -54,6 +55,15 @@ public class ServerConfig {
         musicParticleFrequency = builder
                 .comment("RU: пауза между нотками в миллисекундах | US: gap between notes, in milliseconds")
                 .defineInRange("musicParticleFrequency", 1000, 50, 60000);
+
+        builder.pop();
+        builder.push("voice");
+
+        voiceMod = builder
+                .comment("RU: через какой голосовой мод играть, если стоят оба: svc или plasmo; задаётся командой /radiofm choice",
+                        "US: which voice mod to play through when both are installed: svc or plasmo; set with /radiofm choice")
+                .define("voiceMod", "", value -> value instanceof String s
+                        && (s.isEmpty() || s.equals("svc") || s.equals("plasmo")));
 
         builder.pop();
     }

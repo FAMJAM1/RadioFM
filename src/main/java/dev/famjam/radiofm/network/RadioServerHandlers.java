@@ -68,7 +68,7 @@ public final class RadioServerHandlers {
             return;
         }
 
-        if (atRadioLimit(player)) {
+        if (refuseToStart(player)) {
             return;
         }
         manager.startHandRadio(station.get(), player);
@@ -76,12 +76,18 @@ public final class RadioServerHandlers {
     }
 
     /**
-     * RU: личный потолок из radiofm:max; игрок уведомляется здесь же
-     * US: the per-player cap from radiofm:max; the player is told here
+     * RU: всё, что мешает включить: нет голосового мода, потолок из radiofm:max;
+     *     игрок уведомляется здесь же
+     * US: everything that stops a radio from starting: no voice mod, the radiofm:max
+     *     cap; the player is told here
      *
-     * @return RU: true - больше нельзя | US: true when no more are allowed
+     * @return RU: true - включать нельзя | US: true when it must not start
      */
-    public static boolean atRadioLimit(ServerPlayer player) {
+    public static boolean refuseToStart(ServerPlayer player) {
+        return dev.famjam.radiofm.voice.VoiceBackends.refuse(player) || atRadioLimit(player);
+    }
+
+    private static boolean atRadioLimit(ServerPlayer player) {
         int max = player.serverLevel().getGameRules().getInt(RadioFM.MAX_RADIOS);
         if (RadioManager.get().countActiveFor(player.getUUID()) < max) {
             return false;
@@ -91,7 +97,7 @@ public final class RadioServerHandlers {
     }
 
     private static void startBlockRadio(ServerPlayer player, ServerLevel level, BlockPos pos, RadioStation station) {
-        if (atRadioLimit(player)) {
+        if (refuseToStart(player)) {
             return;
         }
         RadioEvents.applyBlockState(level, pos, station.withOn(true), player.getUUID());
@@ -211,7 +217,7 @@ public final class RadioServerHandlers {
         switch (packet.action()) {
             case RadioControlPacket.PLAY -> RadioItem.read(player.getItemInHand(InteractionHand.MAIN_HAND))
                     .ifPresent(station -> {
-                        if (!atRadioLimit(player)) {
+                        if (!refuseToStart(player)) {
                             manager.startHandRadio(station, player);
                         }
                     });

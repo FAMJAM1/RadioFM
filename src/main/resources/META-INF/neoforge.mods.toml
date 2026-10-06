@@ -12,7 +12,7 @@ logoFile = "radiofm_logo.png"
 # RU: без этого иконку растянет со сглаживанием | US: without this the icon is smoothed when scaled
 logoBlur = false
 authors = "FAMJAM"
-description = "A radio for Simple Voice Chat. Shown only where the mod has no translation of its own."
+description = "A radio for Simple Voice Chat or Plasmo Voice. Shown only where the mod has no translation of its own."
 
 [[dependencies.radiofm]]
 modId = "neoforge"
@@ -28,9 +28,20 @@ versionRange = "[1.21.1,)"
 ordering = "NONE"
 side = "BOTH"
 
+# RU: нужен один из двух голосовых модов, какой - решаем при запуске
+# US: one of the two voice mods is needed, which one is decided at startup
 [[dependencies.radiofm]]
 modId = "voicechat"
-type = "required"
+type = "optional"
 versionRange = "[0,)"
 ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.radiofm]]
+modId = "plasmovoice"
+type = "optional"
+versionRange = "[2.1,)"
+# RU: аддон регистрируем в своём конструкторе, PV к этому времени должен быть загружен
+# US: the addon is registered in our constructor, PV has to be loaded by then
+ordering = "AFTER"
 side = "BOTH"

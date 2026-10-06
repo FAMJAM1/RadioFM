@@ -32,6 +32,12 @@
   "message.radiofm.limit_reached": "Больше %s радио одновременно включить нельзя.",
   "message.radiofm.range_max": "Дальше некуда: %.1f блок(ов) — предел.",
   "message.radiofm.no_tracks": "В радио не добавлено ни одного трека.",
-  "fml.menu.mods.info.description.radiofm": "Радио для мода Simple Voice Chat. Поддержка: YouTube, SoundCloud, Dropbox, Discord и прямые ссылки. Радио можно включать в руках или на земле.",
-  "block.radiofm.radio": "Радио"
+  "fml.menu.mods.info.description.radiofm": "Радио для Simple Voice Chat или Plasmo Voice. Поддержка: YouTube, SoundCloud, Dropbox, Discord и прямые ссылки. Радио можно включать в руках или на земле.",
+  "block.radiofm.radio": "Радио",
+  "message.radiofm.no_voice": "Для радио нужен Simple Voice Chat или Plasmo Voice",
+  "message.radiofm.voice_conflict_admin": "Кажется, используется 2 мода на голосовой чат. Через команду /radiofm choice выберите 1 мод на голосовой чат",
+  "message.radiofm.voice_conflict_player": "Попросите администратора выбрать мод на голосовой чат",
+  "message.radiofm.voice_conflict_local": "Кажется, у вас 2 мода на голосовой чат. Уберите 1 и вновь зайдите в мир",
+  "message.radiofm.voice_chosen": "Вы выбрали %s, теперь через него будет работать радио",
+  "message.radiofm.voice_choice_not_needed": "Стоит только один мод на голосовой чат, выбирать нечего"
 }
