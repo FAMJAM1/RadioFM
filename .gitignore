@@ -1,0 +1,105 @@
+# RU: IntelliJ | US: IntelliJ
+.idea/
+
+*.iml
+*.ipr
+*.iws
+
+out/
+.idea_modules/
+
+atlassian-ide-plugin.xml
+
+*.class
+
+*.log
+
+# RU: BlueJ | US: BlueJ
+*.ctxt
+
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# RU: логи падения JVM | US: JVM crash logs
+hs_err_pid*
+
+*~
+
+# RU: Linux: держатели удалённых файлов, настройки KDE, корзина, NFS | US: Linux: handles to deleted files, KDE settings, trash, NFS
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# RU: macOS | US: macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+Icon
+
+._*
+
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# RU: AFP-шары | US: AFP shares
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# RU: Windows | US: Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+
+*.stackdump
+
+[Dd]esktop.ini
+
+$RECYCLE.BIN/
+
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+*.lnk
+
+# RU: Gradle | US: Gradle
+.gradle
+build/
+
+gradle-app.setting
+
+.gradletasknamecache
+
+**/build/
+
+run/
+
+# RU: иначе правило *.jar выше выкинет обёртку Gradle | US: otherwise the *.jar rule above drops the Gradle wrapper
+!gradle-wrapper.jar
+
+# RU: ключи площадок | US: platform keys
+curseforge_api_key.txt
+curse_creds.txt
+mod_update_api_key.txt
+modrinth_token.txt
+modrinth_creds.txt
+
+libs/

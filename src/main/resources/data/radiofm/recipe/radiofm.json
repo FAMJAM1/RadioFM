@@ -1,0 +1,14 @@
+{
+  "type": "radiofm:radiofm",
+  "pattern": [
+    " L ",
+    "PBP",
+    " A "
+  ],
+  "key": {
+    "L": { "item": "minecraft:lightning_rod" },
+    "P": { "tag": "minecraft:planks" },
+    "B": { "tag": "c:barrels" },
+    "A": { "tag": "c:gems/amethyst" }
+  }
+}
