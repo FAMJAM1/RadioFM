@@ -34,10 +34,13 @@
   "message.radiofm.no_tracks": "This radio has no tracks yet.",
   "fml.menu.mods.info.description.radiofm": "A radio for Simple Voice Chat or Plasmo Voice. Supports: YouTube, SoundCloud, Dropbox, Discord and direct links. You can play the radio whilst holding it or placed as a block.",
   "block.radiofm.radio": "Radio",
-  "message.radiofm.no_voice": "The radio needs Simple Voice Chat or Plasmo Voice",
-  "message.radiofm.voice_conflict_admin": "Looks like two voice chat mods are in use. Pick one with /radiofm choice",
   "message.radiofm.voice_conflict_player": "Ask an administrator to choose a voice chat mod",
-  "message.radiofm.voice_conflict_local": "Looks like you have two voice chat mods. Remove one and rejoin the world",
   "message.radiofm.voice_chosen": "You chose %s, the radio now works through it",
-  "message.radiofm.voice_choice_not_needed": "Only one voice chat mod is installed, there is nothing to choose"
+  "message.radiofm.voice_choice_not_needed": "No voice chat mod is installed, the radio uses its own channel",
+  "message.radiofm.voice_choose_admin": "Looks like a voice chat mod is installed. Use /radiofm choice to pick what the radio plays through: %s",
+  "message.radiofm.voice_choose_local": "Looks like you have a voice chat mod. To pick what the radio plays through, open the world to LAN with cheats on and run /radiofm choice",
+  "gui.radiofm.channel_own": "RadioFM's own channel",
+  "gui.radiofm.volume": "Radio volume: %s%%",
+  "gui.radiofm.track": "♪ %s",
+  "gui.radiofm.track_by": "♪ %s by %s"
 }

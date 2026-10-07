@@ -37,7 +37,58 @@ public class LavaPlayerAudioDecoder implements AudioDecoder {
         this.onTrackEndCallback = callback;
     }
 
+    // RU: LavaPlayer так подписывает прямые файлы без тегов | US: what LavaPlayer puts on plain files without tags
+    private static final String UNKNOWN_TITLE = "Unknown title";
+    private static final String UNKNOWN_AUTHOR = "Unknown artist";
+
+    private final String originalUrl;
+    private volatile String fallbackTitle;
+    private volatile String fallbackAuthor;
+
+    /** RU: для источников, где LavaPlayer не видит тегов (SoundCloud через прямой mp3) | US: for sources where LavaPlayer sees no tags (SoundCloud via a direct mp3) */
+    public void setFallbackInfo(String title, String author) {
+        this.fallbackTitle = title;
+        this.fallbackAuthor = author;
+    }
+
+    @Override
+    public String getTitle() {
+        String title = track == null ? null : track.getInfo().title;
+        if (title != null && !title.isBlank() && !UNKNOWN_TITLE.equals(title)) {
+            return title;
+        }
+        if (fallbackTitle != null) {
+            return fallbackTitle;
+        }
+        return fileName(originalUrl);
+    }
+
+    @Override
+    public String getAuthor() {
+        String author = track == null ? null : track.getInfo().author;
+        if (author != null && !author.isBlank() && !UNKNOWN_AUTHOR.equals(author)) {
+            return author;
+        }
+        return fallbackAuthor;
+    }
+
+    /** RU: последний кусок пути без расширения | US: the last path segment without its extension */
+    private static String fileName(String url) {
+        try {
+            String path = java.net.URI.create(url).getPath();
+            if (path == null || path.isEmpty() || path.endsWith("/")) {
+                return null;
+            }
+            String name = java.net.URLDecoder.decode(path.substring(path.lastIndexOf('/') + 1), java.nio.charset.StandardCharsets.UTF_8);
+            int dot = name.lastIndexOf('.');
+            return dot > 0 ? name.substring(0, dot) : name;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public LavaPlayerAudioDecoder(String originalUrl) throws Exception {
+        this.originalUrl = originalUrl;
         this.url = DropboxUrls.toDirect(originalUrl);
 
         AudioPlayerManager manager = LavaPlayerManager.get();

@@ -29,6 +29,7 @@ public final class LegacyHeads {
 
     public static void convertInventory(ServerPlayer player) {
         Inventory inventory = player.getInventory();
+        java.util.Set<java.util.UUID> seen = new java.util.HashSet<>();
         for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
             ItemStack stack = inventory.getItem(slot);
             // RU: заодно радио без станции, взятые средней кнопкой | US: also station-less radios taken with middle click
@@ -36,20 +37,50 @@ public final class LegacyHeads {
                 RadioItem.write(stack, RadioStation.create("", java.util.List.of()));
                 continue;
             }
+            // RU: стаки радио остались от версий, где они стакались | US: radio stacks left over from versions where they stacked
+            if (stack.is(RadioFM.RADIO_ITEM.get()) && stack.getCount() > 1) {
+                Optional<RadioStation> held = RadioItem.read(stack);
+                if (held.isPresent()) {
+                    splitStack(inventory, slot, held.get(), stack.getCount());
+                }
+                continue;
+            }
+            // RU: копии одной станции (креатив, средняя кнопка) путали, какое радио играет:
+            //     выброшенное продолжало звучать, пока у игрока была копия
+            // US: copies of one station (creative, middle click) confused which radio plays:
+            //     a dropped one kept sounding while the player held a copy
+            if (stack.is(RadioFM.RADIO_ITEM.get())) {
+                Optional<RadioStation> held = RadioItem.read(stack);
+                if (held.isPresent() && !seen.add(held.get().id())) {
+                    RadioItem.write(stack, held.get().withNewId());
+                }
+                continue;
+            }
             if (!stack.is(Items.PLAYER_HEAD)) {
                 continue;
             }
             RadioStation station = stack.get(RadioFM.STATION_COMPONENT.get());
             if (station != null) {
-                inventory.setItem(slot, toItem(station, stack.getCount()));
+                splitStack(inventory, slot, station, stack.getCount());
             }
         }
     }
 
-    public static ItemStack toItem(RadioStation station, int count) {
-        ItemStack radio = RadioItem.create(station.withOn(false));
-        radio.setCount(count);
-        return radio;
+    /**
+     * RU: первое радио сохраняет станцию, остальные становятся отдельными радио с новыми станциями,
+     *     иначе копии делили бы одну станцию
+     * US: the first radio keeps the station, the rest become separate radios with new stations,
+     *     otherwise the copies would share one station
+     */
+    private static void splitStack(Inventory inventory, int slot, RadioStation station, int count) {
+        inventory.setItem(slot, toItem(station));
+        for (int i = 1; i < count; i++) {
+            inventory.placeItemBackInInventory(toItem(station.withNewId()));
+        }
+    }
+
+    public static ItemStack toItem(RadioStation station) {
+        return RadioItem.create(station.withOn(false));
     }
 
     public static Optional<RadioStation> readPlaced(BlockEntity blockEntity) {

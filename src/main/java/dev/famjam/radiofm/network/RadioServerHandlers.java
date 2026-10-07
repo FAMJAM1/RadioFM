@@ -42,7 +42,8 @@ public final class RadioServerHandlers {
                 station.tracks(),
                 state,
                 manager.isShuffle(key),
-                manager.getRepeatTrackIndex(key)));
+                manager.getRepeatTrackIndex(key),
+                dev.famjam.radiofm.voice.own.OwnBackend.isActive(dev.famjam.radiofm.voice.VoiceBackends.current())));
     }
 
     public static void handleToggleHandRadio(ServerPlayer player) {
@@ -120,8 +121,8 @@ public final class RadioServerHandlers {
             BlockPos pos = packet.pos().get();
             PlacedRadios.read(level, pos).ifPresent(station -> {
                 float range = shift(station, packet, max);
-                // RU: дальность задаётся при создании канала | US: range is fixed when the channel opens
-                RadioEvents.applyBlockState(level, pos, station.withRange(range), player.getUUID());
+                PlacedRadios.write(level.getBlockEntity(pos), station.withRange(range));
+                RadioManager.get().updateRange(station.id(), range);
                 report(player, range, max);
             });
             return;
@@ -131,6 +132,7 @@ public final class RadioServerHandlers {
         RadioItem.read(held).ifPresent(station -> {
             float range = shift(station, packet, max);
             RadioItem.write(held, station.withRange(range));
+            RadioManager.get().updateRange(player.getUUID(), range);
             report(player, range, max);
         });
     }
@@ -177,7 +179,8 @@ public final class RadioServerHandlers {
             RadioItem.write(stack, updated);
 
             // RU: иначе сохранение сбивало бы паузу | US: otherwise saving would break the pause
-            if (tracksChanged && RadioManager.get().isHandRadioActive(player.getUUID())) {
+            if (tracksChanged && RadioManager.get().isHandRadioActive(player.getUUID())
+                    && !RadioManager.get().reorder(player.getUUID(), tracks)) {
                 RadioManager.get().startHandRadio(updated, player);
             }
         });
@@ -189,7 +192,7 @@ public final class RadioServerHandlers {
             boolean tracksChanged = !station.tracks().equals(tracks);
             RadioStation updated = station.withName(name).withTracks(tracks);
 
-            if (tracksChanged) {
+            if (tracksChanged && !RadioManager.get().reorder(station.id(), tracks)) {
                 RadioEvents.applyBlockState(level, pos, updated, player.getUUID());
             } else {
                 PlacedRadios.write(level.getBlockEntity(pos), updated);

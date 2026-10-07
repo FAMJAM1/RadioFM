@@ -4,7 +4,7 @@ plugins {
     id("com.gradleup.shadow") version "9.4.0"
 }
 
-String mod_version = "${mod_base_version}+${mod_version_meta}"
+String mod_version = "${mod_base_version}+${minecraft_version}.neoforge"
 
 base.archivesName = archives_base_name
 group = maven_group
@@ -59,7 +59,34 @@ dependencies {
     shadow "org.apache.httpcomponents:httpclient:${httpclient_version}"
 }
 
+// RU: номер мода для кода (аддон Plasmo Voice); иначе его пришлось бы менять руками в двух местах
+// US: the mod version for the code (the Plasmo Voice addon); otherwise it would be changed by hand in two places
+def buildInfoDir = layout.buildDirectory.dir("generated/sources/buildinfo")
+def generateBuildInfo = tasks.register("generateBuildInfo") {
+    def version = mod_base_version
+    inputs.property("version", version)
+    outputs.dir(buildInfoDir)
+    doLast {
+        def file = buildInfoDir.get().file("dev/famjam/radiofm/BuildInfo.java").asFile
+        file.parentFile.mkdirs()
+        file.text = """package dev.famjam.radiofm;
+
+public final class BuildInfo {
+
+    public static final String VERSION = "${version}";
+
+    private BuildInfo() {
+    }
+}
+"""
+    }
+}
+sourceSets.main.java.srcDir(generateBuildInfo)
+
 processResources {
+    // RU: без этого смена версии в gradle.properties не пересобирает mods.toml и в jar остаётся старый номер
+    // US: without this a version change in gradle.properties does not rebuild mods.toml and the jar keeps the old number
+    inputs.properties(project.properties.findAll { key, value -> key.startsWith("mod_") })
     filteringCharset "UTF-8"
     filesMatching("META-INF/neoforge.mods.toml") {
         expand project.properties

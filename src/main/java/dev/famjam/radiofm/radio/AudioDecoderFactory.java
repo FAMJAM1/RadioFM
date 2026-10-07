@@ -6,8 +6,11 @@ public class AudioDecoderFactory {
         SafeUrls.ensureAllowed(url);
 
         if (SoundCloudResolver.isSoundCloud(url)) {
-            url = SoundCloudResolver.resolve(url);
-            SafeUrls.ensureAllowed(url); // RU: адрес новый, тоже чужой | US: a new address, also untrusted
+            SoundCloudResolver.Resolved resolved = SoundCloudResolver.resolve(url);
+            SafeUrls.ensureAllowed(resolved.url()); // RU: адрес новый, тоже чужой | US: a new address, also untrusted
+            LavaPlayerAudioDecoder decoder = new LavaPlayerAudioDecoder(resolved.url());
+            decoder.setFallbackInfo(resolved.title(), resolved.author());
+            return decoder;
         }
         return new LavaPlayerAudioDecoder(url);
     }

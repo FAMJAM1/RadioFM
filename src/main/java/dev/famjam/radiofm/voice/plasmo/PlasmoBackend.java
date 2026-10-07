@@ -1,5 +1,6 @@
 package dev.famjam.radiofm.voice.plasmo;
 
+import dev.famjam.radiofm.BuildInfo;
 import dev.famjam.radiofm.RadioFM;
 import dev.famjam.radiofm.voice.ReadyQueue;
 import dev.famjam.radiofm.voice.VoiceBackend;
@@ -27,7 +28,7 @@ import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-@Addon(id = "radiofm", name = "RadioFM", version = "1.2.0", authors = {"FAMJAM"}, scope = AddonLoaderScope.SERVER)
+@Addon(id = "radiofm", name = "RadioFM", version = BuildInfo.VERSION, authors = {"FAMJAM"}, scope = AddonLoaderScope.SERVER)
 public final class PlasmoBackend extends ReadyQueue implements AddonInitializer {
 
     private static final String ICON = "/assets/" + RadioFM.MODID + "/textures/gui/category_icon.png";
@@ -125,8 +126,10 @@ public final class PlasmoBackend extends ReadyQueue implements AddonInitializer 
             }
         };
 
-        short distance = (short) Math.min(range, Short.MAX_VALUE);
-        AudioSender sender = source.createAudioSender(provider, distance);
+        // RU: PV спрашивает дальность на каждом кадре, поэтому её можно менять на лету
+        // US: PV asks for the distance on every frame, so it can change live
+        short[] distance = {toDistance(range)};
+        AudioSender sender = source.createAudioSender(provider, () -> distance[0]);
         // RU: кодировщик закрываем, только когда отправка встала, иначе кадр может лечь в закрытый
         // US: close the encoder only once sending has stopped, or a frame may hit a closed one
         sender.onStop(release);
@@ -148,6 +151,15 @@ public final class PlasmoBackend extends ReadyQueue implements AddonInitializer 
                     release.run();
                 }
             }
+
+            @Override
+            public void setRange(float range) {
+                distance[0] = toDistance(range);
+            }
         };
+    }
+
+    private static short toDistance(float range) {
+        return (short) Math.min(range, Short.MAX_VALUE);
     }
 }
