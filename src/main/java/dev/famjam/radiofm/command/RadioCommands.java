@@ -146,7 +146,7 @@ public final class RadioCommands {
             }
             affected++;
 
-            // RU: он мог слушать прямо сейчас | US: they may be listening right now
+            // RU: у него могло играть радио в руке | US: a radio may be playing in their hand
             if (banned) {
                 RadioManager.get().stopHandRadio(profile.getId());
             }
