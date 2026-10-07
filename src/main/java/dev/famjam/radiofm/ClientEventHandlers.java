@@ -22,11 +22,34 @@ public class ClientEventHandlers {
 
     public static long clientElapsed = 0;
     public static long clientDuration = -1;
+    public static String clientTitle = "";
+    public static String clientAuthor = "";
 
     @OnlyIn(Dist.CLIENT)
     public static void updateStatus(RadioStatusPacket packet) {
         clientElapsed = packet.elapsedSeconds();
         clientDuration = packet.durationSeconds();
+        clientTitle = packet.title();
+        clientAuthor = packet.author();
+    }
+
+    @SubscribeEvent
+    @OnlyIn(Dist.CLIENT)
+    public static void onClientTick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
+        dev.famjam.radiofm.client.OwnAudioClient.tick();
+    }
+
+    /** RU: смена измерения или возрождение: звуки старого мира стояли бы не там | US: dimension change or respawn: old-world sounds would sit in the wrong place */
+    @SubscribeEvent
+    @OnlyIn(Dist.CLIENT)
+    public static void onClone(net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.Clone event) {
+        dev.famjam.radiofm.client.OwnAudioClient.clear();
+    }
+
+    @SubscribeEvent
+    @OnlyIn(Dist.CLIENT)
+    public static void onLoggingOut(net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
+        dev.famjam.radiofm.client.OwnAudioClient.clear();
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -34,6 +57,8 @@ public class ClientEventHandlers {
         // RU: иначе до первого пакета видно время прошлого радио | US: or the last radio's time shows until the first packet
         clientElapsed = 0;
         clientDuration = -1;
+        clientTitle = "";
+        clientAuthor = "";
         Minecraft.getInstance().setScreen(new RadioScreen(packet));
     }
 

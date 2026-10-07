@@ -5,6 +5,8 @@ import dev.famjam.radiofm.ClientEventHandlers;
 import dev.famjam.radiofm.network.RadioControlPacket;
 import dev.famjam.radiofm.network.SaveRadioPacket;
 import net.minecraft.client.gui.GuiGraphics;
+import dev.famjam.radiofm.config.ClientConfig;
+import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -16,6 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RadioScreen extends Screen {
+
+    private static final int VOLUME_MARGIN = 3;
+    private static final int VOLUME_WIDTH = 120;
 
     // RU: пусто - радио в руке | US: empty means a held radio
     private final java.util.Optional<BlockPos> pos;
@@ -30,6 +35,7 @@ public class RadioScreen extends Screen {
     private EditBox playlistUrlField;
     private int scrollOffset = 0;
     private int repeatTrackIndex = -1;
+    private final boolean ownChannel;
 
     public RadioScreen(OpenRadioScreenPacket packet) {
         super(Component.translatable("gui.radiofm.title"));
@@ -39,6 +45,7 @@ public class RadioScreen extends Screen {
         this.currentState = packet.state();
         this.shuffle = packet.shuffle();
         this.repeatTrackIndex = packet.repeatTrackIndex();
+        this.ownChannel = packet.ownChannel();
         if (this.trackUrls.isEmpty()) this.trackUrls.add("");
     }
 
@@ -51,6 +58,12 @@ public class RadioScreen extends Screen {
         stationNameField.setValue(currentStationName);
         stationNameField.setHint(Component.translatable("gui.radiofm.station_hint"));
         this.addRenderableWidget(stationNameField);
+
+        // RU: громкость наша, только когда звук идёт своим каналом; у SVC и PV свои ползунки
+        // US: the volume is ours only when the sound goes through our channel; SVC and PV have their own sliders
+        if (ownChannel) {
+            this.addRenderableWidget(new VolumeSlider(VOLUME_MARGIN, VOLUME_MARGIN, VOLUME_WIDTH, 20));
+        }
 
         urlFields.clear();
         int maxVisible = Math.max(1, (this.height - 200) / 26);
@@ -97,7 +110,15 @@ public class RadioScreen extends Screen {
                 }
             }).bounds(cx + 105, y, 20, 20).build());
 
+            Button up = Button.builder(Component.literal("▲"), btn -> moveTrack(trackIdx, -1, maxVis))
+                    .bounds(cx + 130, y, 20, 20).build();
+            up.active = trackIdx > 0;
+            this.addRenderableWidget(up);
 
+            Button down = Button.builder(Component.literal("▼"), btn -> moveTrack(trackIdx, 1, maxVis))
+                    .bounds(cx + 155, y, 20, 20).build();
+            down.active = !isLast;
+            this.addRenderableWidget(down);
         }
 
         int controlY = this.height - 80;
@@ -275,9 +296,14 @@ public class RadioScreen extends Screen {
         }
         graphics.drawCenteredString(this.font, timeStr, this.width / 2, this.height - 15, 0xAAAAAA);
 
+        Component track = trackLine(ClientEventHandlers.clientTitle, ClientEventHandlers.clientAuthor);
+        if (track != null) {
+            graphics.drawCenteredString(this.font, fit(track.getString(), this.width - 20), this.width / 2, this.height - 27, 0xDDDDDD);
+        }
+
         boolean hasDiscord = trackUrls.stream().anyMatch(u -> u.contains("cdn.discordapp.com"));
         if (hasDiscord) {
-            graphics.drawCenteredString(this.font, "⚠ Discord ссылки истекают через ~24ч", this.width / 2, this.height - 27, 0xFFFFAA00);
+            graphics.drawCenteredString(this.font, "⚠ Discord ссылки истекают через ~24ч", this.width / 2, this.height - 39, 0xFFFFAA00);
         }
 
         int maxVisible = Math.max(1, (this.height - 200) / 26);
@@ -317,5 +343,72 @@ public class RadioScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    private void moveTrack(int index, int step, int maxVisible) {
+        int target = index + step;
+        syncFieldsToList();
+        if (target < 0 || target >= trackUrls.size()) {
+            return;
+        }
+        java.util.Collections.swap(trackUrls, index, target);
+        // RU: метка повтора едет вместе со своим треком | US: the repeat marker travels with its track
+        if (repeatTrackIndex == index) {
+            repeatTrackIndex = target;
+        } else if (repeatTrackIndex == target) {
+            repeatTrackIndex = index;
+        }
+        // RU: строка не должна уехать за край прокрутки | US: the row must not slide out of the scrolled view
+        if (target < scrollOffset) {
+            scrollOffset = target;
+        } else if (target >= scrollOffset + maxVisible) {
+            scrollOffset = target - maxVisible + 1;
+        }
+        clearWidgets();
+        init();
+    }
+
+    /** RU: null - трек неизвестен, тогда строки нет | US: null when the track is unknown, then there is no line */
+    public static Component trackLine(String title, String author) {
+        if (title == null || title.isBlank()) {
+            return null;
+        }
+        if (author == null || author.isBlank()) {
+            return Component.translatable("gui.radiofm.track", title);
+        }
+        return Component.translatable("gui.radiofm.track_by", title, author);
+    }
+
+    private String fit(String text, int maxWidth) {
+        if (this.font.width(text) <= maxWidth) {
+            return text;
+        }
+        return this.font.plainSubstrByWidth(text, maxWidth - this.font.width("...")) + "...";
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        if (ownChannel) {
+            ClientConfig.RADIO_VOLUME.save();
+        }
+    }
+
+    private static final class VolumeSlider extends AbstractSliderButton {
+
+        private VolumeSlider(int x, int y, int width, int height) {
+            super(x, y, width, height, Component.empty(), ClientConfig.RADIO_VOLUME.get() / (double) ClientConfig.MAX_VOLUME);
+            updateMessage();
+        }
+
+        @Override
+        protected void updateMessage() {
+            setMessage(Component.translatable("gui.radiofm.volume", (int) Math.round(value * ClientConfig.MAX_VOLUME)));
+        }
+
+        @Override
+        protected void applyValue() {
+            ClientConfig.RADIO_VOLUME.set((int) Math.round(value * ClientConfig.MAX_VOLUME));
+        }
     }
 }

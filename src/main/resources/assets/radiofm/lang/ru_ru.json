@@ -34,10 +34,13 @@
   "message.radiofm.no_tracks": "В радио не добавлено ни одного трека.",
   "fml.menu.mods.info.description.radiofm": "Радио для Simple Voice Chat или Plasmo Voice. Поддержка: YouTube, SoundCloud, Dropbox, Discord и прямые ссылки. Радио можно включать в руках или на блоке.",
   "block.radiofm.radio": "Радио",
-  "message.radiofm.no_voice": "Для радио нужен Simple Voice Chat или Plasmo Voice",
-  "message.radiofm.voice_conflict_admin": "Кажется, используется 2 мода на голосовой чат. Через команду /radiofm choice выберите 1 мод на голосовой чат",
   "message.radiofm.voice_conflict_player": "Попросите администратора выбрать мод на голосовой чат",
-  "message.radiofm.voice_conflict_local": "Кажется, у вас 2 мода на голосовой чат. Уберите 1 и вновь зайдите в мир",
   "message.radiofm.voice_chosen": "Вы выбрали %s, теперь через него будет работать радио",
-  "message.radiofm.voice_choice_not_needed": "Стоит только один мод на голосовой чат, выбирать нечего"
+  "message.radiofm.voice_choice_not_needed": "Голосовых модов нет, радио работает через свой канал",
+  "message.radiofm.voice_choose_admin": "Кажется, стоит мод на голосовой чат. Через команду /radiofm choice выберите, через что будет работать радио: %s",
+  "message.radiofm.voice_choose_local": "Кажется, у вас стоит мод на голосовой чат. Чтобы выбрать, через что будет работать радио, откройте мир для сети с читами и введите /radiofm choice",
+  "gui.radiofm.channel_own": "свой канал RadioFM",
+  "gui.radiofm.volume": "Громкость радио: %s%%",
+  "gui.radiofm.track": "♪ %s",
+  "gui.radiofm.track_by": "♪ %s от %s"
 }

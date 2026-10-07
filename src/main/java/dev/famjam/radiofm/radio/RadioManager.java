@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -198,6 +199,15 @@ public class RadioManager {
         Modes saved = modes.getOrDefault(key, Modes.DEFAULT);
         stream.setShuffle(saved.shuffle());
         stream.setRepeatTrack(saved.repeatTrack());
+    }
+
+    /** RU: true - играющее радио приняло новый порядок без перезапуска | US: true when the playing radio took the new order without a restart */
+    public boolean reorder(UUID key, List<String> tracks) {
+        return liveStream(key).filter(RadioStream::isActive).map(stream -> stream.reorder(tracks)).orElse(false);
+    }
+
+    public void updateRange(UUID key, float range) {
+        liveStream(key).ifPresent(stream -> stream.setRange(range));
     }
 
     public Optional<RadioStream> liveStream(UUID key) {

@@ -39,7 +39,10 @@ public class SoundCloudResolver {
         return host.equals("soundcloud.com") || host.endsWith(".soundcloud.com");
     }
 
-    public static String resolve(String soundcloudUrl) throws Exception {
+    public record Resolved(String url, String title, String author) {
+    }
+
+    public static Resolved resolve(String soundcloudUrl) throws Exception {
         RadioFM.LOGGER.info("SoundCloud: resolving {}", soundcloudUrl);
 
         String html = get(soundcloudUrl);
@@ -53,12 +56,19 @@ public class SoundCloudResolver {
 
         JsonArray hydration = JsonParser.parseString(m.group(1)).getAsJsonArray();
         String progressiveUrl = null;
+        String title = null;
+        String author = null;
 
         for (int i = 0; i < hydration.size(); i++) {
             JsonObject item = hydration.get(i).getAsJsonObject();
             if (!"sound".equals(item.get("hydratable").getAsString())) continue;
 
-            JsonArray transcodings = item.getAsJsonObject("data")
+            JsonObject data = item.getAsJsonObject("data");
+            title = text(data, "title");
+            if (data.has("user") && data.get("user").isJsonObject()) {
+                author = text(data.getAsJsonObject("user"), "username");
+            }
+            JsonArray transcodings = data
                     .getAsJsonObject("media")
                     .getAsJsonArray("transcodings");
 
@@ -81,7 +91,11 @@ public class SoundCloudResolver {
         String mp3Url = streamObj.get("url").getAsString();
 
         RadioFM.LOGGER.info("SoundCloud: resolved to {}", mp3Url.substring(0, Math.min(80, mp3Url.length())));
-        return mp3Url;
+        return new Resolved(mp3Url, title, author);
+    }
+
+    private static String text(JsonObject object, String key) {
+        return object.has(key) && object.get(key).isJsonPrimitive() ? object.get(key).getAsString() : null;
     }
 
     private static String getClientId(String html) throws Exception {

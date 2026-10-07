@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/** RU: события NeoForge вместо миксинов в ваниль | US: NeoForge events, not vanilla mixins */
+/** RU: события NeoForge вместо миксинов в ванильный код | US: NeoForge events, not mixins into vanilla code */
 @EventBusSubscriber(modid = RadioFM.MODID)
 public class RadioEvents {
 
@@ -180,7 +180,7 @@ public class RadioEvents {
         Optional<RadioStation> legacy = LegacyHeads.readPlaced(event.getBlockEntity());
         if (legacy.isPresent()) {
             event.getDrops().stream().findFirst()
-                    .ifPresent(itemEntity -> itemEntity.setItem(LegacyHeads.toItem(legacy.get(), 1)));
+                    .ifPresent(itemEntity -> itemEntity.setItem(LegacyHeads.toItem(legacy.get())));
             return;
         }
         Optional<RadioStation> station = PlacedRadios.read(event.getBlockEntity());
@@ -233,10 +233,27 @@ public class RadioEvents {
         if (!RadioManager.get().isHandRadioActive(playerId)) {
             return;
         }
-        boolean stillCarried = player.getInventory().items.stream().anyMatch(RadioItem::isRadio);
-        if (!stillCarried) {
+        // RU: ищем именно играющее радио по id станции: с любым радио выброшенное играло дальше,
+        //     пока в инвентаре лежало другое
+        // US: look for the playing radio itself by station id: with any radio the dropped one kept
+        //     playing while another sat in the inventory
+        UUID playing = RadioManager.get().getHandStream(playerId).map(stream -> stream.getStation().id()).orElse(null);
+        if (playing == null || !carries(player, playing)) {
             RadioManager.get().stopHandRadio(playerId);
         }
+    }
+
+    private static boolean carries(ServerPlayer player, UUID stationId) {
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            boolean match = RadioItem.read(inventory.getItem(slot))
+                    .map(station -> station.id().equals(stationId))
+                    .orElse(false);
+            if (match) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @SubscribeEvent
@@ -253,6 +270,7 @@ public class RadioEvents {
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
+        dev.famjam.radiofm.voice.own.OwnBackend.tick(event.getServer());
         long now = System.currentTimeMillis();
         if (now - lastStatusSent < STATUS_INTERVAL_MS) {
             return;
@@ -264,8 +282,9 @@ public class RadioEvents {
             manager.viewing(player.getUUID()).ifPresent(key -> PacketDistributor.sendToPlayer(player,
                     manager.liveStream(key)
                             .filter(RadioStream::isActive)
-                            .map(stream -> new RadioStatusPacket(stream.getElapsedSeconds(), stream.getDurationSeconds()))
-                            .orElse(new RadioStatusPacket(0, -1))));
+                            .map(stream -> RadioStatusPacket.of(stream.getElapsedSeconds(), stream.getDurationSeconds(),
+                                    stream.getTrackTitle(), stream.getTrackAuthor()))
+                            .orElse(RadioStatusPacket.of(0, -1, null, null))));
         }
     }
 

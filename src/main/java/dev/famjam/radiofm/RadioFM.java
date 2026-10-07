@@ -30,6 +30,16 @@ public class RadioFM {
 
     public static final String MODID = "radiofm";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
+
+    /**
+     * RU: версия пакетов мода; поднимать при любой их правке, тогда клиент другой версии
+     *     получит отказ при входе, а не вылет на незнакомом пакете. До 1.3.0 здесь по ошибке
+     *     стоял id мода, поэтому старые клиенты отличаются и от этого значения
+     * US: the mod's packet version; bump it on any packet change, so a client of another
+     *     version is refused on join instead of crashing on an unknown packet. Before 1.3.0
+     *     the mod id sat here by mistake, so old clients differ from this value as well
+     */
+    private static final String NETWORK_VERSION = "2";
     public static final ServerConfig SERVER_CONFIG = ServerConfig.INSTANCE;
 
     /** RU: сколько радио на игрока, вместе с тем что в руке | US: radios per player, the held one included */
@@ -56,8 +66,10 @@ public class RadioFM {
                     .build());
 
     /**
-     * RU: настройки на поставленном радио; аттачмент вместо миксина - NeoForge сам их хранит
-     * US: settings on the placed radio; an attachment, not a mixin - NeoForge stores them
+     * RU: только для чтения старых данных: так станцию хранили радио до 1.3.0 и головы из 1.0.0;
+     *     теперь она в данных RadioBlockEntity
+     * US: for reading old data only: radios before 1.3.0 and heads from 1.0.0 kept the station
+     *     this way; it now lives in RadioBlockEntity's data
      */
     public static final Supplier<AttachmentType<RadioStation>> STATION_ATTACHMENT =
             ATTACHMENTS.register("station", () -> AttachmentType
@@ -78,7 +90,11 @@ public class RadioFM {
                             .noOcclusion());
 
     public static final net.neoforged.neoforge.registries.DeferredItem<net.minecraft.world.item.BlockItem> RADIO_ITEM =
-            ITEMS.registerSimpleBlockItem("radio", RADIO_BLOCK);
+            // RU: не стакается: копии в стаке несут одну станцию, и выброшенное играющее радио
+            //     продолжало бы играть, пока в инвентаре лежит хоть одна копия
+            // US: does not stack: copies in a stack share one station, and a dropped playing radio
+            //     would keep playing while a single copy stayed in the inventory
+            ITEMS.registerSimpleBlockItem("radio", RADIO_BLOCK, new net.minecraft.world.item.Item.Properties().stacksTo(1));
 
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.famjam.radiofm.radio.RadioBlockEntity>> RADIO_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("radio", () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder
@@ -87,6 +103,7 @@ public class RadioFM {
 
     public RadioFM(IEventBus modEventBus, net.neoforged.fml.ModContainer container) {
         container.registerConfig(ModConfig.Type.SERVER, ServerConfig.SPEC, MODID + "-server.toml");
+        container.registerConfig(ModConfig.Type.CLIENT, dev.famjam.radiofm.config.ClientConfig.SPEC, MODID + "-client.toml");
         dev.famjam.radiofm.voice.VoiceBackends.select();
 
         COMPONENTS.register(modEventBus);
@@ -107,11 +124,20 @@ public class RadioFM {
     }
 
     private void registerPayloads(net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar(MODID);
+        var registrar = event.registrar(NETWORK_VERSION);
         registrar.playToClient(OpenRadioScreenPacket.TYPE, OpenRadioScreenPacket.STREAM_CODEC,
                 (packet, ctx) -> ctx.enqueueWork(() -> ClientEventHandlers.openScreen(packet)));
         registrar.playToClient(RadioStatusPacket.TYPE, RadioStatusPacket.STREAM_CODEC,
                 (packet, ctx) -> ctx.enqueueWork(() -> ClientEventHandlers.updateStatus(packet)));
+        // RU: звук разбираем прямо на сетевом потоке: через основной кадры ждали бы отрисовку
+        // US: audio is handled right on the network thread: through the main one frames would wait for rendering
+        var audio = registrar.executesOn(net.neoforged.neoforge.network.registration.HandlerThread.NETWORK);
+        audio.playToClient(dev.famjam.radiofm.network.RadioAudioPacket.TYPE, dev.famjam.radiofm.network.RadioAudioPacket.STREAM_CODEC,
+                (packet, ctx) -> dev.famjam.radiofm.client.OwnAudioClient.onAudio(packet));
+        audio.playToClient(dev.famjam.radiofm.network.RadioTrackPacket.TYPE, dev.famjam.radiofm.network.RadioTrackPacket.STREAM_CODEC,
+                (packet, ctx) -> dev.famjam.radiofm.client.OwnAudioClient.onTrack(packet));
+        audio.playToClient(dev.famjam.radiofm.network.RadioAudioEndPacket.TYPE, dev.famjam.radiofm.network.RadioAudioEndPacket.STREAM_CODEC,
+                (packet, ctx) -> dev.famjam.radiofm.client.OwnAudioClient.onEnd(packet));
         registrar.playToServer(SaveRadioPacket.TYPE, SaveRadioPacket.STREAM_CODEC,
                 (packet, ctx) -> ctx.enqueueWork(() ->
                         RadioServerHandlers.handleSave(packet, (ServerPlayer) ctx.player())));

@@ -89,6 +89,15 @@ public final class SvcBackend extends ReadyQueue {
             public void stop() {
                 player.stopPlaying();
             }
+
+            @Override
+            public void setRange(float range) {
+                if (channel instanceof LocationalAudioChannel locational) {
+                    locational.setDistance(range);
+                } else if (channel instanceof EntityAudioChannel entity) {
+                    entity.setDistance(range);
+                }
+            }
         };
     }
 

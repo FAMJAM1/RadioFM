@@ -16,4 +16,9 @@ public interface AudioDecoder {
      * US: length in seconds, -1 for a live stream
      */
     default long getDurationSeconds() { return -1; }
+
+    /** RU: null - неизвестно | US: null when unknown */
+    default String getTitle() { return null; }
+
+    default String getAuthor() { return null; }
 }

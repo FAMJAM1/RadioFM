@@ -60,10 +60,10 @@ public class ServerConfig {
         builder.push("voice");
 
         voiceMod = builder
-                .comment("RU: через какой голосовой мод играть, если стоят оба: svc или plasmo; задаётся командой /radiofm choice",
-                        "US: which voice mod to play through when both are installed: svc or plasmo; set with /radiofm choice")
+                .comment("RU: через что играть, если стоит голосовой мод: svc, plasmo или our (свой канал); задаётся командой /radiofm choice",
+                        "US: what to play through when a voice mod is installed: svc, plasmo or our (own channel); set with /radiofm choice")
                 .define("voiceMod", "", value -> value instanceof String s
-                        && (s.isEmpty() || s.equals("svc") || s.equals("plasmo")));
+                        && (s.isEmpty() || s.equals("svc") || s.equals("plasmo") || s.equals("our")));
 
         builder.pop();
     }

@@ -24,7 +24,14 @@ public abstract class RadioStream implements Supplier<short[]> {
     protected final RadioStation station;
     protected final UUID id;
 
-    private final List<String> playlist;
+    /** RU: ссылка из окна и треки, в которые она раскрылась (плейлист - во много) | US: a link from the screen and the tracks it expanded to (a playlist - to many) */
+    private record Segment(String raw, List<String> tracks) {
+    }
+
+    private volatile List<Segment> segments;
+    private volatile List<String> playlist;
+    /** RU: растёт при перестановке, чтобы поздняя предзагрузка по старой очереди не встала | US: grows on reorder so a late preload from the old queue is not used */
+    private volatile int queueGeneration;
 
     private volatile boolean active;
     private volatile boolean paused;
@@ -37,6 +44,8 @@ public abstract class RadioStream implements Supplier<short[]> {
     private volatile int requestedIndex = -1;
 
     private volatile VoiceOutput output;
+    /** RU: дальность, изменённая уже во время игры | US: a range changed while playing */
+    private volatile float rangeOverride = -1;
     private volatile AudioDecoder decoder;
     private volatile AudioDecoder pendingDecoder;
     private volatile int pendingIndex = -1;
@@ -50,19 +59,90 @@ public abstract class RadioStream implements Supplier<short[]> {
     protected RadioStream(RadioStation station, UUID id) {
         this.station = station;
         this.id = id;
-        this.playlist = resolvePlaylist(station);
+        this.segments = resolveSegments(station);
+        this.playlist = flatten(segments);
     }
 
     /** RU: ссылка может быть плейлистом | US: a link may be a playlist */
-    private static List<String> resolvePlaylist(RadioStation station) {
-        List<String> resolved = new ArrayList<>();
+    private static List<Segment> resolveSegments(RadioStation station) {
+        List<Segment> resolved = new ArrayList<>();
         for (String raw : station.tracks()) {
             String trimmed = raw.trim();
             if (!trimmed.isEmpty()) {
-                resolved.addAll(PlaylistLoader.load(trimmed));
+                resolved.add(new Segment(trimmed, List.copyOf(PlaylistLoader.load(trimmed))));
             }
         }
         return List.copyOf(resolved);
+    }
+
+    private static List<String> flatten(List<Segment> segments) {
+        List<String> all = new ArrayList<>();
+        segments.forEach(segment -> all.addAll(segment.tracks()));
+        return List.copyOf(all);
+    }
+
+    /**
+     * RU: те же ссылки в другом порядке: текущий трек доигрывает, дальше идём по новой очереди,
+     *     плейлисты заново не скачиваются
+     * US: the same links in another order: the current track plays on, then the new queue is
+     *     followed, playlists are not downloaded again
+     *
+     * @return RU: false - список изменился не только порядком, нужен перезапуск | US: false when the list changed beyond its order, a restart is needed
+     */
+    public synchronized boolean reorder(List<String> rawTracks) {
+        List<Segment> old = segments;
+        List<Segment> pool = new ArrayList<>(old);
+        List<Segment> next = new ArrayList<>();
+        for (String raw : rawTracks) {
+            String trimmed = raw.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            int found = -1;
+            for (int i = 0; i < pool.size(); i++) {
+                if (pool.get(i) != null && pool.get(i).raw().equals(trimmed)) {
+                    found = i;
+                    break;
+                }
+            }
+            if (found < 0) {
+                return false;
+            }
+            next.add(pool.get(found));
+            pool.set(found, null);
+        }
+        if (next.size() != old.size()) {
+            return false;
+        }
+
+        int current = currentTrackIndex;
+        Segment playing = null;
+        int offset = 0;
+        int start = 0;
+        for (Segment segment : old) {
+            if (current < start + segment.tracks().size()) {
+                playing = segment;
+                offset = current - start;
+                break;
+            }
+            start += segment.tracks().size();
+        }
+        int moved = 0;
+        start = 0;
+        for (Segment segment : next) {
+            if (segment == playing) {
+                moved = start + offset;
+                break;
+            }
+            start += segment.tracks().size();
+        }
+
+        queueGeneration++;
+        segments = List.copyOf(next);
+        playlist = flatten(next);
+        currentTrackIndex = moved;
+        discardPending();
+        return true;
     }
 
     protected abstract VoiceOutput openOutput(VoiceBackend backend);
@@ -77,9 +157,21 @@ public abstract class RadioStream implements Supplier<short[]> {
     }
 
     protected float configuredRange() {
+        float override = rangeOverride;
+        if (override > 0) {
+            return override;
+        }
         return station.range() > 0
                 ? station.range()
                 : RadioFM.SERVER_CONFIG.radioRange.get().floatValue();
+    }
+
+    public void setRange(float range) {
+        rangeOverride = range;
+        VoiceOutput out = output;
+        if (out != null) {
+            out.setRange(configuredRange());
+        }
     }
 
     public void start() {
@@ -89,7 +181,7 @@ public abstract class RadioStream implements Supplier<short[]> {
         }
         VoiceBackend backend = VoiceBackends.current();
         if (backend == null) {
-            tell("message.radiofm.no_voice");
+            RadioFM.LOGGER.warn("Radio {} has no voice output chosen yet", id);
             return;
         }
         backend.runWhenReady(() -> openAndPlay(backend));
@@ -162,6 +254,7 @@ public abstract class RadioStream implements Supplier<short[]> {
         AudioDecoder previous = decoder;
         try {
             decoder = openDecoder(url);
+            announce(decoder);
         } catch (Exception e) {
             active = false;
             throw e;
@@ -206,11 +299,17 @@ public abstract class RadioStream implements Supplier<short[]> {
             return;
         }
         int next = computeNextIndex();
+        int generation = queueGeneration;
+        String url = playlist.get(next);
         trackLoading = true;
 
         Thread thread = new Thread(() -> {
             try {
-                AudioDecoder prepared = openDecoder(playlist.get(next));
+                AudioDecoder prepared = openDecoder(url);
+                if (generation != queueGeneration) {
+                    closeQuietly(prepared);
+                    return;
+                }
                 pendingIndex = next;
                 pendingDecoder = prepared;
             } catch (Exception e) {
@@ -241,6 +340,7 @@ public abstract class RadioStream implements Supplier<short[]> {
                 AudioDecoder loaded = openDecoder(playlist.get(index));
                 resetClock();
                 decoder = loaded;
+                announce(loaded);
             } catch (Exception e) {
                 RadioFM.LOGGER.warn("Failed to load track {} on skip", index, e);
                 tell("message.radiofm.start_error");
@@ -269,6 +369,7 @@ public abstract class RadioStream implements Supplier<short[]> {
 
         AudioDecoder old = decoder;
         decoder = next;
+        announce(next);
         currentTrackIndex = pendingIndex;
         pendingDecoder = null;
         pendingIndex = -1;
@@ -277,6 +378,23 @@ public abstract class RadioStream implements Supplier<short[]> {
 
         closeQuietly(old);
         return true;
+    }
+
+    private void announce(AudioDecoder current) {
+        VoiceOutput out = output;
+        if (out != null && current != null) {
+            out.setTrack(current.getTitle(), current.getAuthor());
+        }
+    }
+
+    public String getTrackTitle() {
+        AudioDecoder current = decoder;
+        return current == null ? null : current.getTitle();
+    }
+
+    public String getTrackAuthor() {
+        AudioDecoder current = decoder;
+        return current == null ? null : current.getAuthor();
     }
 
     private static void closeQuietly(AudioDecoder decoder) {

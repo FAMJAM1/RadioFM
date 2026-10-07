@@ -59,11 +59,7 @@ public final class RadioCommands {
                                 .executes(ctx -> setBanned(ctx, false))))
                 .then(Commands.literal("bans")
                         .executes(RadioCommands::listBans))
-                .then(Commands.literal("choice")
-                        .then(Commands.literal("svc")
-                                .executes(ctx -> chooseVoiceMod(ctx, VoiceBackends.SVC, "Simple Voice Chat")))
-                        .then(Commands.literal("pv")
-                                .executes(ctx -> chooseVoiceMod(ctx, VoiceBackends.PLASMO, "Plasmo Voice"))))
+                .then(choiceCommand())
                 .then(Commands.literal("range")
                         .then(Commands.argument("blocks", FloatArgumentType.floatArg(1F, 512F))
                                 .executes(ctx -> setHeldRange(ctx, FloatArgumentType.getFloat(ctx, "blocks")))
@@ -73,9 +69,25 @@ public final class RadioCommands {
                                                 FloatArgumentType.getFloat(ctx, "blocks")))))));
     }
 
-    private static int chooseVoiceMod(CommandContext<CommandSourceStack> ctx, String mod, String title) {
+    /** RU: в подсказках только то, что реально стоит | US: suggestions list only what is actually installed */
+    private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> choiceCommand() {
+        var choice = Commands.literal("choice");
+        if (VoiceBackends.hasSvc()) {
+            choice.then(Commands.literal("svc")
+                    .executes(ctx -> chooseVoiceMod(ctx, VoiceBackends.SVC, Component.literal("Simple Voice Chat"))));
+        }
+        if (VoiceBackends.hasPlasmo()) {
+            choice.then(Commands.literal("pv")
+                    .executes(ctx -> chooseVoiceMod(ctx, VoiceBackends.PLASMO, Component.literal("Plasmo Voice"))));
+        }
+        choice.then(Commands.literal(VoiceBackends.OWN)
+                .executes(ctx -> chooseVoiceMod(ctx, VoiceBackends.OWN, Component.translatable("gui.radiofm.channel_own"))));
+        return choice;
+    }
+
+    private static int chooseVoiceMod(CommandContext<CommandSourceStack> ctx, String mod, Component title) {
         CommandSourceStack source = ctx.getSource();
-        if (!VoiceBackends.bothInstalled()) {
+        if (!VoiceBackends.needsChoice()) {
             source.sendFailure(Component.translatable("message.radiofm.voice_choice_not_needed"));
             return 0;
         }
@@ -116,6 +128,7 @@ public final class RadioCommands {
         }
         float capped = cap(ctx, range);
         RadioItem.write(held, station.get().withRange(capped));
+        RadioManager.get().updateRange(player.getUUID(), capped);
         ctx.getSource().sendSuccess(
                 () -> Component.translatable("message.radiofm.radius_changed", capped), false);
         return 1;
@@ -183,9 +196,8 @@ public final class RadioCommands {
             return 0;
         }
         float capped = cap(ctx, range);
-        // RU: дальность задаётся при создании канала | US: range is fixed when the channel opens
-        RadioEvents.applyBlockState(level, pos, station.get().withRange(capped),
-                ctx.getSource().getPlayer() == null ? null : ctx.getSource().getPlayer().getUUID());
+        PlacedRadios.write(level.getBlockEntity(pos), station.get().withRange(capped));
+        RadioManager.get().updateRange(station.get().id(), capped);
         ctx.getSource().sendSuccess(
                 () -> Component.translatable("message.radiofm.radius_changed", capped), false);
         return 1;
