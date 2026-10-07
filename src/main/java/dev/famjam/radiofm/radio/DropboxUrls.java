@@ -1,6 +1,13 @@
 package dev.famjam.radiofm.radio;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
 public class DropboxUrls {
+
+    private static final String DIRECT_HOST = "dl.dropboxusercontent.com";
 
     /**
      * RU: www.dropbox.com даже с dl=1 отдаёт application/binary, и LavaPlayer
@@ -9,14 +16,36 @@ public class DropboxUrls {
      *     cannot tell what it is; dl.dropboxusercontent.com sends audio/mpeg
      */
     public static String toDirect(String url) {
-        if (url == null || !url.contains("dropbox.com/")) return url;
-
-        String fixed = url.replace("://www.dropbox.com/", "://dl.dropboxusercontent.com/");
-
-        fixed = fixed.replace("?dl=0", "?dl=1").replace("&dl=0", "&dl=1");
-        if (!fixed.contains("dl=1")) {
-            fixed = fixed + (fixed.contains("?") ? "&" : "?") + "dl=1";
+        if (url == null) {
+            return null;
         }
-        return fixed;
+        URI uri;
+        try {
+            uri = new URI(url);
+        } catch (Exception e) {
+            return url;
+        }
+        String host = uri.getHost();
+        if (host == null) {
+            return url;
+        }
+        host = host.toLowerCase(Locale.ROOT);
+        if (!host.equals("dropbox.com") && !host.equals("www.dropbox.com")) {
+            return url;
+        }
+
+        // RU: rlkey и прочие параметры нужны ссылке, меняем только dl
+        // US: rlkey and the other parameters are needed by the link, only dl changes
+        List<String> params = new ArrayList<>();
+        String query = uri.getRawQuery();
+        if (query != null) {
+            for (String param : query.split("&")) {
+                if (!param.isEmpty() && !param.startsWith("dl=")) {
+                    params.add(param);
+                }
+            }
+        }
+        params.add("dl=1");
+        return "https://" + DIRECT_HOST + uri.getRawPath() + "?" + String.join("&", params);
     }
 }
