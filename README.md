@@ -70,7 +70,7 @@ The wheel acts on the radio under the crosshair, or on the one in hand when ther
 ```
 
 A ban covers every action: switching on, settings, range, and breaking someone else's radio. A radio
-in the player's hand stops at once, but radios they placed keep playing until someone switches them
+in the player's hand turns off at once, but radios they placed keep playing until someone switches them
 off. The player still hears radios nearby. The list lives in the world save and travels with it.
 
 ### Voice mods
@@ -178,7 +178,7 @@ The jar lands in `build/libs/`.
 ```
 
 Запрет закрывает все действия: включение, настройки, слышимость и даже поломку чужого радио. Радио
-в руке игрока сразу замолкает, а поставленные им радио играют, пока их кто-нибудь не выключит.
+в руке игрока сразу выключается, а поставленные им радио играют, пока их кто-нибудь не выключит.
 Слушать радио рядом игрок по-прежнему может. Список хранится в сохранении мира.
 
 ### Голосовые моды
