@@ -63,14 +63,15 @@ The wheel acts on the radio under the crosshair, or on the one in hand when ther
 /radiofm give "Name"             hand one out named after a station
 /radiofm give "Name" 64          both at once
 /radiofm range <blocks> [x y z]  set the range of a held radio, or one at a position
-/radiofm ban <player>            take radios away from a player
+/radiofm ban <player>            stop a player using radios
 /radiofm unban <player>          give them back
 /radiofm bans                    list who is banned
 /radiofm choice <svc|pv|our>     pick the channel when a voice mod is installed
 ```
 
-A ban covers everything: switching on, settings, range, and breaking someone else's radio. The list
-lives in the world save and travels with it.
+A ban covers every action: switching on, settings, range, and breaking someone else's radio. A radio
+in the player's hand stops at once, but radios they placed keep playing until someone switches them
+off. The player still hears radios nearby. The list lives in the world save and travels with it.
 
 ### Voice mods
 
@@ -176,8 +177,9 @@ The jar lands in `build/libs/`.
 /radiofm choice <svc|pv|our>     выбрать канал, если стоит голосовой мод
 ```
 
-Запрет отбирает радио целиком: включение, настройки, слышимость и даже поломку чужого радио.
-Список хранится в сохранении мира.
+Запрет закрывает все действия: включение, настройки, слышимость и даже поломку чужого радио. Радио
+в руке игрока сразу замолкает, а поставленные им радио играют, пока их кто-нибудь не выключит.
+Слушать радио рядом игрок по-прежнему может. Список хранится в сохранении мира.
 
 ### Голосовые моды
 
