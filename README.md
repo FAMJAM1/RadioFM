@@ -1,14 +1,14 @@
 # RadioFM
 
-A radio for [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) or [Plasmo Voice](https://modrinth.com/plugin/plasmo-voice). Supports: YouTube, SoundCloud, Dropbox, Discord and direct links. You can play the radio whilst holding it or placed as a block.
+A radio that plays on its own or through [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) or [Plasmo Voice](https://modrinth.com/plugin/plasmo-voice). Supports: YouTube, SoundCloud, Dropbox, Discord and direct links. You can play the radio whilst holding it or placed as a block.
 
-Радио для [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) или [Plasmo Voice](https://modrinth.com/plugin/plasmo-voice). Поддержка: YouTube, SoundCloud, Dropbox, Discord и прямые ссылки. Радио можно включать в руках или на блоке.
+Радио, которое играет само или через [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) или [Plasmo Voice](https://modrinth.com/plugin/plasmo-voice). Поддержка: YouTube, SoundCloud, Dropbox, Discord и прямые ссылки. Радио можно включать в руках или на блоке.
 
 | | |
 |---|---|
 | Minecraft | 1.21.1 |
 | Loader · Загрузчик | NeoForge |
-| Requires · Требуется | [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) or · или [Plasmo Voice](https://modrinth.com/plugin/plasmo-voice) |
+| Optional · Необязательно | [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) or · или [Plasmo Voice](https://modrinth.com/plugin/plasmo-voice) |
 | License · Лицензия | MIT |
 
 [English](#english) · [Русский](#русский)
@@ -23,8 +23,9 @@ A radio for [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) o
 - Track lists from a `.txt` or `.m3u` file
 - Shuffle, repeat one track, pause, skip
 - Carry a radio in hand or place it as a block - the sound follows the player or stays at a point in the world
-- Its own volume category in the voice chat settings
-- Works with Simple Voice Chat or Plasmo Voice, whichever the server has
+- Plays through its own channel when no voice mod is installed, with a volume slider in the radio screen
+- Works with Simple Voice Chat or Plasmo Voice, whichever the server has, with its own volume category in their settings
+- The name of the playing track above the timer, and in the subtitles on its own channel
 
 ### Getting one
 
@@ -40,8 +41,8 @@ A lightning rod on top, planks either side of a barrel, an amethyst below.
 ![The radio screen: station name, track list, playback buttons](docs/gui.png)
 
 The station name and the track list are at the top: the button on the left loops a track, the cross
-removes the row. Below are playlist loading, skip, pause, play and shuffle, with the time of the
-current track underneath.
+removes the row, the arrows next to it move the track up or down. Below are playlist loading, skip, pause, play and shuffle, with the time of the
+current track underneath. On its own channel a volume slider sits in the top left corner.
 
 ### Controls
 
@@ -65,7 +66,7 @@ The wheel acts on the radio under the crosshair, or on the one in hand when ther
 /radiofm ban <player>            take radios away from a player
 /radiofm unban <player>          give them back
 /radiofm bans                    list who is banned
-/radiofm choice <svc|pv>         pick the voice mod when both are installed
+/radiofm choice <svc|pv|our>     pick the channel when a voice mod is installed
 ```
 
 A ban covers everything: switching on, settings, range, and breaking someone else's radio. The list
@@ -73,10 +74,11 @@ lives in the world save and travels with it.
 
 ### Voice mods
 
-The radio uses whichever voice mod is installed. With both, it asks for a choice: an operator, or a
-player in their own world with cheats on, runs `/radiofm choice svc` or `/radiofm choice pv`. In a
-world without cheats, remove one of the two mods and rejoin. The choice is kept in
-`config/radiofm-server.toml`.
+Without a voice mod the radio plays through its own channel, nothing else needs installing. With
+Simple Voice Chat, Plasmo Voice or both, it asks for a choice: an operator, or a player in their own
+world with cheats on, runs `/radiofm choice svc`, `/radiofm choice pv` or `/radiofm choice our` for its
+own channel. In a world without cheats, remove the voice mods you do not need and rejoin. The choice
+is kept in `config/radiofm-server.toml`.
 
 ### Game rules
 
@@ -100,7 +102,7 @@ world without cheats, remove one of the two mods and rejoin. The choice is kept 
 | `security.maxTracksPerRadio` | 128 | tracks taken from one playlist |
 | `security.maxPlaylistBytes` | 262144 | bytes read from a playlist file |
 | `security.allowPrivateNetworks` | false | let radios reach addresses inside the server's network |
-| `voice.voiceMod` | empty | `svc` or `plasmo` when both voice mods are installed |
+| `voice.voiceMod` | empty | `svc`, `plasmo` or `our` when a voice mod is installed |
 
 ### On security
 
@@ -128,8 +130,9 @@ The jar lands in `build/libs/`.
 - Списки треков файлом `.txt` или `.m3u`
 - Перемешивание, повтор трека, пауза, перемотка
 - Радио работает в руке или на блоке - звук идёт с игроком или из точки мира
-- Своя категория громкости в настройках голосового чата
-- Работает с Simple Voice Chat или Plasmo Voice, смотря что стоит на сервере
+- Без голосового мода играет через свой канал, громкость - ползунком в окне радио
+- Работает с Simple Voice Chat или Plasmo Voice, смотря что стоит на сервере, со своей категорией громкости в их настройках
+- Название играющего трека над таймером, а на своём канале и в субтитрах
 
 ### Как получить
 
@@ -143,9 +146,10 @@ The jar lands in `build/libs/`.
 
 ![Окно радио: название станции, список треков, кнопки управления](docs/gui.png)
 
-Сверху название станции и список треков: кнопка слева зацикливает трек, крестик убирает строку.
+Сверху название станции и список треков: кнопка слева зацикливает трек, крестик убирает строку,
+стрелки справа от него двигают трек вверх или вниз.
 Снизу загрузка плейлиста ссылкой, перемотка, пауза, воспроизведение и перемешивание. Под кнопками
-идёт время текущего трека.
+идёт время текущего трека. На своём канале в левом верхнем углу - ползунок громкости.
 
 ### Управление
 
@@ -169,7 +173,7 @@ The jar lands in `build/libs/`.
 /radiofm ban <игрок>             запретить игроку пользоваться радио
 /radiofm unban <игрок>           снять запрет
 /radiofm bans                    список запретов
-/radiofm choice <svc|pv>         выбрать голосовой мод, если стоят оба
+/radiofm choice <svc|pv|our>     выбрать канал, если стоит голосовой мод
 ```
 
 Запрет отбирает радио целиком: включение, настройки, слышимость и даже поломку чужого радио.
@@ -177,9 +181,10 @@ The jar lands in `build/libs/`.
 
 ### Голосовые моды
 
-Радио работает через тот голосовой мод, что установлен. Если стоят оба, оно попросит выбрать:
-оператор или игрок в своём мире с читами вводит `/radiofm choice svc` или `/radiofm choice pv`. В мире
-без читов уберите один из двух модов и зайдите снова. Выбор хранится в `config/radiofm-server.toml`.
+Без голосового мода радио играет через свой канал, ставить больше ничего не нужно. Если стоит
+Simple Voice Chat, Plasmo Voice или оба, оно попросит выбрать: оператор или игрок в своём мире с читами
+вводит `/radiofm choice svc`, `/radiofm choice pv` или `/radiofm choice our` для своего канала. В мире
+без читов уберите лишние голосовые моды и зайдите снова. Выбор хранится в `config/radiofm-server.toml`.
 
 ### Игровые правила
 
@@ -203,7 +208,7 @@ The jar lands in `build/libs/`.
 | `security.maxTracksPerRadio` | 128 | сколько треков берётся из плейлиста |
 | `security.maxPlaylistBytes` | 262144 | сколько байт читается из файла плейлиста |
 | `security.allowPrivateNetworks` | false | пускать радио по адресам внутри сети сервера |
-| `voice.voiceMod` | пусто | `svc` или `plasmo`, если стоят оба голосовых мода |
+| `voice.voiceMod` | пусто | `svc`, `plasmo` или `our`, если стоит голосовой мод |
 
 ### Про безопасность
 

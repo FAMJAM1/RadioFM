@@ -32,7 +32,7 @@
   "message.radiofm.limit_reached": "You may not have more than %s radios playing.",
   "message.radiofm.range_max": "That is as far as it goes: %.1f blocks.",
   "message.radiofm.no_tracks": "This radio has no tracks yet.",
-  "fml.menu.mods.info.description.radiofm": "A radio for Simple Voice Chat or Plasmo Voice. Supports: YouTube, SoundCloud, Dropbox, Discord and direct links. You can play the radio whilst holding it or placed as a block.",
+  "fml.menu.mods.info.description.radiofm": "A radio that plays on its own or through Simple Voice Chat or Plasmo Voice. Supports: YouTube, SoundCloud, Dropbox, Discord and direct links. You can play the radio whilst holding it or placed as a block.",
   "block.radiofm.radio": "Radio",
   "message.radiofm.voice_conflict_player": "Ask an administrator to choose a voice chat mod",
   "message.radiofm.voice_chosen": "You chose %s, the radio now works through it",

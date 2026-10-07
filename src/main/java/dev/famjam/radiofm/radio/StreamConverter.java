@@ -1,10 +1,10 @@
 package dev.famjam.radiofm.radio;
 
 /**
- * RU: приводит поток декодера к моно 48кГц, которое ждёт голосовой чат;
- *     копим внутри, потому что кадр декодера 21.8мс, а чату нужно ровно 20мс
- * US: brings the decoder's output to the mono 48kHz the voice chat expects;
- *     buffered here because a decoder frame is 21.8ms while the chat wants exactly 20ms
+ * RU: приводит поток декодера к моно 48кГц, которое ждут голосовые моды и свой канал;
+ *     копим внутри, потому что кадр декодера 21.8мс, а нужно ровно 20мс
+ * US: brings the decoder's output to the mono 48kHz the voice mods and our own channel expect;
+ *     buffered here because a decoder frame is 21.8ms while exactly 20ms is needed
  */
 public class StreamConverter {
 
