@@ -17,7 +17,7 @@ logoFile = "radiofm_logo.png"
 # RU: без этого иконку растянет со сглаживанием | US: without this the icon is smoothed when scaled
 logoBlur = false
 authors = "FAMJAM"
-description = "A radio for Simple Voice Chat or Plasmo Voice. Shown only where the mod has no translation of its own."
+description = "A radio that plays on its own or through Simple Voice Chat or Plasmo Voice. Shown only where the mod has no translation of its own."
 
 [[dependencies.radiofm]]
 # RU: диапазоны закрыты сверху: сборка под 1.21.1 в другой версии игры упадёт, пусть лучше не грузится
@@ -35,8 +35,8 @@ versionRange = "[1.21.1]"
 ordering = "NONE"
 side = "BOTH"
 
-# RU: нужен один из двух голосовых модов, какой - решаем при запуске
-# US: one of the two voice mods is needed, which one is decided at startup
+# RU: голосовые моды необязательны: без них радио играет через свой канал
+# US: voice mods are optional: without them the radio plays through its own channel
 [[dependencies.radiofm]]
 modId = "voicechat"
 type = "optional"
