@@ -1,4 +1,4 @@
-# RU: IntelliJ | US: IntelliJ
+# IntelliJ
 .idea/
 
 *.iml
@@ -14,7 +14,7 @@ atlassian-ide-plugin.xml
 
 *.log
 
-# RU: BlueJ | US: BlueJ
+# BlueJ
 *.ctxt
 
 *.jar
@@ -36,7 +36,7 @@ hs_err_pid*
 .Trash-*
 .nfs*
 
-# RU: macOS | US: macOS
+# macOS
 .DS_Store
 .AppleDouble
 .LSOverride
@@ -60,7 +60,7 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-# RU: Windows | US: Windows
+# Windows
 Thumbs.db
 Thumbs.db:encryptable
 ehthumbs.db
@@ -80,7 +80,7 @@ $RECYCLE.BIN/
 
 *.lnk
 
-# RU: Gradle | US: Gradle
+# Gradle
 .gradle
 build/
 
