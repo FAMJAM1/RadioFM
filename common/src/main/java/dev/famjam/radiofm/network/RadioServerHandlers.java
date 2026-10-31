@@ -28,7 +28,7 @@ public final class RadioServerHandlers {
     }
 
     public static void openScreenFor(ServerPlayer player, RadioStation station, Optional<BlockPos> pos) {
-        UUID key = pos.isPresent() ? station.id() : player.getUUID();
+        UUID key = station.id();
         RadioManager manager = RadioManager.get();
         manager.setViewing(player.getUUID(), key);
 
@@ -54,26 +54,39 @@ public final class RadioServerHandlers {
         UUID playerId = player.getUUID();
         RadioManager manager = RadioManager.get();
 
-        if (manager.isHandRadioActive(playerId)) {
-            manager.stopHandRadio(playerId);
-            player.displayClientMessage(Component.translatable("message.radiofm.toggled_off"), true);
-            return;
-        }
-
         Optional<RadioStation> station = RadioItem.read(player.getItemInHand(InteractionHand.MAIN_HAND));
         if (station.isEmpty()) {
             return;
         }
-        if (!station.get().hasTracks()) {
-            player.displayClientMessage(Component.translatable("message.radiofm.no_tracks"), true);
+        // RU: выключает только то же радио; другое радио в руке переключает на себя
+        // US: only the same radio switches off; another radio in hand switches over to itself
+        boolean same = manager.playingHandStation(playerId).filter(station.get().id()::equals).isPresent();
+        if (same) {
+            manager.stopHandRadio(playerId);
+            player.displayClientMessage(Component.translatable("message.radiofm.toggled_off"), true);
             return;
         }
+        if (startHeld(player, station.get())) {
+            player.displayClientMessage(Component.translatable("message.radiofm.toggled_on"), true);
+        }
+    }
 
-        if (refuseToStart(player)) {
-            return;
+    /**
+     * RU: играющее в руке радио выключается, только когда новое точно заиграет: иначе пустое
+     *     радио в руке глушило бы играющее
+     * US: the radio playing in hand stops only once the new one is sure to play: otherwise an
+     *     empty radio in hand would silence the playing one
+     */
+    private static boolean startHeld(ServerPlayer player, RadioStation station) {
+        if (!station.hasTracks()) {
+            player.displayClientMessage(Component.translatable("message.radiofm.no_tracks"), true);
+            return false;
         }
-        manager.startHandRadio(station.get(), player);
-        player.displayClientMessage(Component.translatable("message.radiofm.toggled_on"), true);
+        if (dev.famjam.radiofm.voice.VoiceBackends.refuse(player) || atRadioLimit(player, true)) {
+            return false;
+        }
+        RadioManager.get().startHandRadio(station, player);
+        return true;
     }
 
     /**
@@ -85,12 +98,17 @@ public final class RadioServerHandlers {
      * @return RU: true - включать нельзя | US: true when it must not start
      */
     public static boolean refuseToStart(ServerPlayer player) {
-        return dev.famjam.radiofm.voice.VoiceBackends.refuse(player) || atRadioLimit(player);
+        return dev.famjam.radiofm.voice.VoiceBackends.refuse(player) || atRadioLimit(player, false);
     }
 
-    private static boolean atRadioLimit(ServerPlayer player) {
+    /** @param replacingHand RU: радио в руке сменится, а не добавится | US: the radio in hand is replaced, not added */
+    private static boolean atRadioLimit(ServerPlayer player, boolean replacingHand) {
         int max = player.serverLevel().getGameRules().getInt(RadioFM.MAX_RADIOS);
-        if (RadioManager.get().countActiveFor(player.getUUID()) < max) {
+        int active = RadioManager.get().countActiveFor(player.getUUID());
+        if (replacingHand && RadioManager.get().getHandStream(player.getUUID()).isPresent()) {
+            active--;
+        }
+        if (active < max) {
             return false;
         }
         Notify.refused(player, "message.radiofm.limit_reached", max);
@@ -132,7 +150,7 @@ public final class RadioServerHandlers {
         RadioItem.read(held).ifPresent(station -> {
             float range = shift(station, packet, max);
             RadioItem.write(held, station.withRange(range));
-            RadioManager.get().updateRange(player.getUUID(), range);
+            RadioManager.get().updateRange(station.id(), range);
             report(player, range, max);
         });
     }
@@ -179,8 +197,9 @@ public final class RadioServerHandlers {
             RadioItem.write(stack, updated);
 
             // RU: иначе сохранение сбивало бы паузу | US: otherwise saving would break the pause
-            if (tracksChanged && RadioManager.get().isHandRadioActive(player.getUUID())
-                    && !RadioManager.get().reorder(player.getUUID(), tracks)) {
+            boolean playing = RadioManager.get().playingHandStation(player.getUUID())
+                    .filter(station.id()::equals).isPresent();
+            if (tracksChanged && playing && !RadioManager.get().reorder(station.id(), tracks)) {
                 RadioManager.get().startHandRadio(updated, player);
             }
         });
@@ -213,19 +232,25 @@ public final class RadioServerHandlers {
         }
     }
 
+    /** RU: кнопки окна относятся к радио в руке, а не к тому, что играет | US: the screen's buttons refer to the radio in hand, not to the one playing */
     private static void controlHandRadio(RadioControlPacket packet, ServerPlayer player) {
         UUID playerId = player.getUUID();
         RadioManager manager = RadioManager.get();
+        Optional<RadioStation> held = RadioItem.read(player.getItemInHand(InteractionHand.MAIN_HAND));
+        if (held.isEmpty()) {
+            return;
+        }
+        RadioStation station = held.get();
+        boolean playing = manager.playingHandStation(playerId).filter(station.id()::equals).isPresent();
 
         switch (packet.action()) {
-            case RadioControlPacket.PLAY -> RadioItem.read(player.getItemInHand(InteractionHand.MAIN_HAND))
-                    .ifPresent(station -> {
-                        if (!refuseToStart(player)) {
-                            manager.startHandRadio(station, player);
-                        }
-                    });
-            case RadioControlPacket.STOP -> manager.stopHandRadio(playerId);
-            default -> applyCommon(packet, playerId);
+            case RadioControlPacket.PLAY -> startHeld(player, station);
+            case RadioControlPacket.STOP -> {
+                if (playing) {
+                    manager.stopHandRadio(playerId);
+                }
+            }
+            default -> applyCommon(packet, station.id());
         }
     }
 

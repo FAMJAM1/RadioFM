@@ -15,8 +15,10 @@ import java.util.UUID;
  * RU: режимы лежат тут, а не в стриме, чтобы пережить выключение
  * US: modes live here, not in the stream, so they outlive it
  * <p>
- * RU: ключ - игрок для радио в руке, станция для поставленного
- * US: keyed by player for a held radio, by station for a placed one
+ * RU: режимы, таймер и кнопки ищут радио по станции и для поставленного, и для радио в руке:
+ *     по игроку одно радио в руке управляло бы любым другим
+ * US: modes, the timer and the buttons find a radio by station, placed or held: by player one
+ *     held radio would control any other
  */
 public class RadioManager {
 
@@ -125,7 +127,7 @@ public class RadioManager {
         stopHandRadio(player.getUUID());
 
         HandRadioStream stream = new HandRadioStream(station, player);
-        applyModes(player.getUUID(), stream);
+        applyModes(station.id(), stream);
         handStreams.put(player.getUUID(), stream);
         stream.start();
     }
@@ -145,9 +147,14 @@ public class RadioManager {
         return getHandStream(playerId).map(RadioStream::isActive).orElse(false);
     }
 
+    /** RU: станция радио, что играет у игрока в руке | US: the station of the radio playing in the player's hand */
+    public Optional<UUID> playingHandStation(UUID playerId) {
+        return getHandStream(playerId).filter(RadioStream::isActive).map(stream -> stream.getStation().id());
+    }
+
     public void onPlayerLeft(UUID playerId) {
+        getHandStream(playerId).ifPresent(stream -> modes.remove(stream.getStation().id()));
         stopHandRadio(playerId);
-        modes.remove(playerId);
         viewing.remove(playerId);
     }
 
@@ -210,12 +217,15 @@ public class RadioManager {
         liveStream(key).ifPresent(stream -> stream.setRange(range));
     }
 
-    public Optional<RadioStream> liveStream(UUID key) {
-        RadioStream stream = handStreams.get(key);
-        if (stream == null) {
-            stream = blockStreams.get(key);
+    public Optional<RadioStream> liveStream(UUID stationId) {
+        RadioStream stream = blockStreams.get(stationId);
+        if (stream != null) {
+            return Optional.of(stream);
         }
-        return Optional.ofNullable(stream);
+        return handStreams.values().stream()
+                .filter(hand -> hand.getStation().id().equals(stationId))
+                .<RadioStream>map(hand -> hand)
+                .findFirst();
     }
 
     public void stopAll() {

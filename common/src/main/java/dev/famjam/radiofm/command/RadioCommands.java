@@ -128,7 +128,7 @@ public final class RadioCommands {
         }
         float capped = cap(ctx, range);
         RadioItem.write(held, station.get().withRange(capped));
-        RadioManager.get().updateRange(player.getUUID(), capped);
+        RadioManager.get().updateRange(station.get().id(), capped);
         ctx.getSource().sendSuccess(
                 () -> Component.translatable("message.radiofm.radius_changed", capped), false);
         return 1;
