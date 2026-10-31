@@ -1,73 +1,9 @@
-plugins {
-    id("java")
-    id("net.neoforged.moddev") version "2.0.+"
-    id("com.gradleup.shadow") version "9.4.0"
-}
-
-String mod_version = "${mod_base_version}+${minecraft_version}.neoforge"
-
-base.archivesName = archives_base_name
-group = maven_group
-version = mod_version
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-    maven { url = 'https://maven.maxhenkel.de/repository/public' }
-    maven { url = 'https://maven.lavalink.dev/releases' }
-    maven { url = 'https://maven.lavalink.dev/snapshots' }
-    maven { url = 'https://repo.plasmoverse.com/releases' }
-}
-
-neoForge {
-    version = neoforge_version
-
-    mods {
-        radiofm {
-            sourceSet sourceSets.main
-        }
-    }
-    runs {
-        client {
-            client()
-            gameDirectory = project.file('run')
-        }
-    }
-}
-
-configurations {
-    shadow
-    implementation.extendsFrom shadow
-}
-
-dependencies {
-    compileOnly "de.maxhenkel.voicechat:voicechat-api:${voicechat_api_version}"
-    compileOnly "su.plo.voice.api:server:${plasmovoice_api_version}"
-    compileOnly "su.plo.slib:api-server:${plasmo_slib_version}"
-
-    // RU: LavaPlayer хочет httpclient 4.5.14, игра пиннит 4.5.13 - берём версию игры
-    // US: LavaPlayer wants httpclient 4.5.14, the game pins 4.5.13 - take the game's
-    implementation("dev.arbjerg:lavaplayer:${lavaplayer_version}") {
-        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
-    }
-    shadow("dev.arbjerg:lavaplayer:${lavaplayer_version}") {
-        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
-    }
-
-    implementation("dev.lavalink.youtube:common:${youtube_source_version}") {
-        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
-    }
-    shadow("dev.lavalink.youtube:common:${youtube_source_version}") {
-        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
-    }
-
-    implementation "org.apache.httpcomponents:httpclient:${httpclient_version}"
-    shadow "org.apache.httpcomponents:httpclient:${httpclient_version}"
-}
+// RU: общее для всех частей; что собирается под какой загрузчик - в их собственных build.gradle
+// US: shared by every part; what is built for which loader lives in their own build.gradle
+def buildInfoDir = layout.buildDirectory.dir("generated/sources/buildinfo")
 
 // RU: номер мода для кода (аддон Plasmo Voice); иначе его пришлось бы менять руками в двух местах
 // US: the mod version for the code (the Plasmo Voice addon); otherwise it would be changed by hand in two places
-def buildInfoDir = layout.buildDirectory.dir("generated/sources/buildinfo")
 def generateBuildInfo = tasks.register("generateBuildInfo") {
     def version = mod_base_version
     inputs.property("version", version)
@@ -87,52 +23,31 @@ public final class BuildInfo {
 """
     }
 }
-sourceSets.main.java.srcDir(generateBuildInfo)
 
-processResources {
-    // RU: без этого смена версии в gradle.properties не пересобирает mods.toml и в jar остаётся старый номер
-    // US: without this a version change in gradle.properties does not rebuild mods.toml and the jar keeps the old number
-    inputs.properties(project.properties.findAll { key, value -> key.startsWith("mod_") })
-    filteringCharset "UTF-8"
-    filesMatching("META-INF/neoforge.mods.toml") {
-        expand project.properties
+subprojects {
+    apply plugin: 'java'
+
+    group = maven_group
+
+    repositories {
+        mavenCentral()
+        maven { url = 'https://maven.maxhenkel.de/repository/public' }
+        maven { url = 'https://maven.lavalink.dev/releases' }
+        maven { url = 'https://maven.lavalink.dev/snapshots' }
+        maven { url = 'https://repo.plasmoverse.com/releases' }
+        maven { url = 'https://raw.githubusercontent.com/Fuzss/modresources/main/maven/' }
     }
-}
 
-tasks.withType(JavaCompile).configureEach {
-    it.options.encoding = 'UTF-8'
-    it.options.release = 21
-}
-
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
-}
-
-shadowJar {
-    configurations = [project.configurations.shadow]
-    archiveClassifier = ''
-
-    relocate 'org.apache.http', "dev.famjam.${mod_id}.apache.http"
-    relocate 'org.slf4j', "dev.famjam.${mod_id}.slf4j"
-
-    // RU: только то, что реально едет с httpclient; весь org.apache.commons нельзя -
-    //     под него попадёт lang3, который даёт игра, и ссылки на него сломаются
-    // US: only what actually travels with httpclient; not all of org.apache.commons -
-    //     that catches lang3, which the game provides, and breaks references to it
-    relocate 'org.apache.commons.codec', "dev.famjam.${mod_id}.commons.codec"
-    relocate 'org.apache.commons.io', "dev.famjam.${mod_id}.commons.io"
-    relocate 'org.apache.commons.logging', "dev.famjam.${mod_id}.commons.logging"
-
-    // RU: свой класс входа в YouTube вместо библиотечного (почему - в самом классе); первым в jar
-    //     ложится наш код, EXCLUDE отбрасывает второй, библиотечный
-    // US: our own YouTube login class instead of the library's (why is in the class itself); our
-    //     code goes into the jar first, EXCLUDE drops the second one, the library's
-    filesMatching('dev/lavalink/youtube/http/YoutubeOauth2Handler.class') {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    java {
+        toolchain.languageVersion = JavaLanguageVersion.of(21)
     }
-    // RU: старый встроенный YouTube из LavaPlayer тоже умеет входить в аккаунт; играет у нас youtube-source,
-    //     а на этот пакет ссылается только AudioSourceManagers.registerRemoteSources, который мы не зовём
-    // US: LavaPlayer's old built-in YouTube can log in to an account too; youtube-source is what plays here,
-    //     and only AudioSourceManagers.registerRemoteSources refers to this package, which we never call
-    exclude 'com/sedmelluq/discord/lavaplayer/source/youtube/**'
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.release = 21
+    }
+
+    if (project.name != 'youtube-patch') {
+        sourceSets.main.java.srcDir(generateBuildInfo)
+    }
 }

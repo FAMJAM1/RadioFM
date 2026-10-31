@@ -1,0 +1,43 @@
+plugins {
+    id 'net.neoforged.moddev'
+}
+
+// RU: общий код компилируется против чистой игры, без NeoForge и Fabric: так видно,
+//     что он не зовёт ничего, чего нет у другого загрузчика
+// US: the common code compiles against the plain game, without NeoForge or Fabric: that shows
+//     it calls nothing the other loader lacks
+neoForge {
+    neoFormVersion = neo_form_version
+    accessTransformers.from(file('src/main/resources/META-INF/accesstransformer.cfg'))
+}
+
+dependencies {
+    compileOnly "de.maxhenkel.voicechat:voicechat-api:${voicechat_api_version}"
+    compileOnly "su.plo.voice.api:server:${plasmovoice_api_version}"
+    compileOnly "su.plo.slib:api-server:${plasmo_slib_version}"
+    compileOnly "fuzs.forgeconfigapiport:forgeconfigapiport-common-neoforgeapi:${forgeconfigapiport_version}"
+    compileOnly("dev.arbjerg:lavaplayer:${lavaplayer_version}") {
+        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+    }
+    compileOnly("dev.lavalink.youtube:common:${youtube_source_version}") {
+        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+    }
+}
+
+// RU: загрузчики компилируют исходники общей части у себя, а не берут её jar
+// US: the loaders compile the common sources themselves rather than taking its jar
+configurations {
+    commonJava {
+        canBeResolved = false
+        canBeConsumed = true
+    }
+    commonResources {
+        canBeResolved = false
+        canBeConsumed = true
+    }
+}
+
+artifacts {
+    commonJava file('src/main/java')
+    commonResources file('src/main/resources')
+}

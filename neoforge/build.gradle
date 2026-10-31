@@ -1,0 +1,91 @@
+plugins {
+    id 'net.neoforged.moddev'
+    id 'com.gradleup.shadow'
+}
+
+base.archivesName = archives_base_name
+version = "${mod_base_version}+${minecraft_version}.neoforge"
+
+neoForge {
+    version = neoforge_version
+    accessTransformers.from(project(':common').file('src/main/resources/META-INF/accesstransformer.cfg'))
+
+    mods {
+        radiofm {
+            sourceSet sourceSets.main
+        }
+    }
+    runs {
+        client {
+            client()
+            gameDirectory = rootProject.file('run')
+        }
+    }
+}
+
+configurations {
+    shadow
+    implementation.extendsFrom shadow
+    commonJava {
+        canBeResolved = true
+    }
+    commonResources {
+        canBeResolved = true
+    }
+}
+
+dependencies {
+    commonJava project(path: ':common', configuration: 'commonJava')
+    commonResources project(path: ':common', configuration: 'commonResources')
+
+    compileOnly "de.maxhenkel.voicechat:voicechat-api:${voicechat_api_version}"
+    compileOnly "su.plo.voice.api:server:${plasmovoice_api_version}"
+    compileOnly "su.plo.slib:api-server:${plasmo_slib_version}"
+
+    // RU: LavaPlayer хочет httpclient 4.5.14, игра пиннит 4.5.13 - берём версию игры
+    // US: LavaPlayer wants httpclient 4.5.14, the game pins 4.5.13 - take the game's
+    shadow("dev.arbjerg:lavaplayer:${lavaplayer_version}") {
+        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+    }
+    shadow project(':youtube-patch')
+    shadow "org.apache.httpcomponents:httpclient:${httpclient_version}"
+}
+
+tasks.named('compileJava', JavaCompile) {
+    dependsOn(configurations.commonJava)
+    source(configurations.commonJava)
+}
+
+processResources {
+    dependsOn(configurations.commonResources)
+    from(configurations.commonResources)
+    // RU: без этого смена версии в gradle.properties не пересобирает mods.toml и в jar остаётся старый номер
+    // US: without this a version change in gradle.properties does not rebuild mods.toml and the jar keeps the old number
+    inputs.properties(project.properties.findAll { key, value -> key.startsWith("mod_") })
+    filteringCharset "UTF-8"
+    filesMatching("META-INF/neoforge.mods.toml") {
+        expand project.properties
+    }
+}
+
+shadowJar {
+    configurations = [project.configurations.shadow]
+    archiveClassifier = ''
+
+    relocate 'org.apache.http', "dev.famjam.${mod_id}.apache.http"
+    relocate 'org.slf4j', "dev.famjam.${mod_id}.slf4j"
+
+    // RU: только то, что реально едет с httpclient; весь org.apache.commons нельзя -
+    //     под него попадёт lang3, который даёт игра, и ссылки на него сломаются
+    // US: only what actually travels with httpclient; not all of org.apache.commons -
+    //     that catches lang3, which the game provides, and breaks references to it
+    relocate 'org.apache.commons.codec', "dev.famjam.${mod_id}.commons.codec"
+    relocate 'org.apache.commons.io', "dev.famjam.${mod_id}.commons.io"
+    relocate 'org.apache.commons.logging', "dev.famjam.${mod_id}.commons.logging"
+
+    // RU: старый встроенный YouTube из LavaPlayer тоже умеет входить в аккаунт; играет у нас youtube-source,
+    //     а на этот пакет ссылается только AudioSourceManagers.registerRemoteSources, который мы не зовём
+    // US: LavaPlayer's old built-in YouTube can log in to an account too; youtube-source is what plays here,
+    //     and only AudioSourceManagers.registerRemoteSources refers to this package, which we never call
+    exclude 'com/sedmelluq/discord/lavaplayer/source/youtube/**'
+}

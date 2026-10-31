@@ -1,0 +1,30 @@
+// RU: youtube-source с заменённым классом входа в аккаунт (почему - в самом классе). Готовым jar, а не
+//     классом внутри мода: так он одинаково вшивается и в NeoForge, и в Fabric, без правил о дублях
+// US: youtube-source with its account login class swapped out (why is in the class itself). As a ready jar
+//     rather than a class inside the mod: that way it is shaded the same into NeoForge and Fabric, with no
+//     duplicate rules
+configurations {
+    upstream {
+        transitive = false
+    }
+}
+
+dependencies {
+    upstream "dev.lavalink.youtube:common:${youtube_source_version}"
+    compileOnly("dev.lavalink.youtube:common:${youtube_source_version}") {
+        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+    }
+    compileOnly("dev.arbjerg:lavaplayer:${lavaplayer_version}") {
+        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+    }
+    compileOnly "org.apache.httpcomponents:httpclient:${httpclient_version}"
+    // RU: то, что youtube-source тянет с собой при работе | US: what youtube-source pulls in at runtime
+    implementation "org.mozilla:rhino-engine:1.7.15"
+    implementation "com.grack:nanojson:1.7"
+}
+
+jar {
+    from(zipTree(configurations.upstream.singleFile)) {
+        exclude 'dev/lavalink/youtube/http/YoutubeOauth2Handler.class'
+    }
+}
