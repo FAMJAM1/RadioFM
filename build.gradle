@@ -122,4 +122,17 @@ shadowJar {
     relocate 'org.apache.commons.codec', "dev.famjam.${mod_id}.commons.codec"
     relocate 'org.apache.commons.io', "dev.famjam.${mod_id}.commons.io"
     relocate 'org.apache.commons.logging', "dev.famjam.${mod_id}.commons.logging"
+
+    // RU: свой класс входа в YouTube вместо библиотечного (почему - в самом классе); первым в jar
+    //     ложится наш код, EXCLUDE отбрасывает второй, библиотечный
+    // US: our own YouTube login class instead of the library's (why is in the class itself); our
+    //     code goes into the jar first, EXCLUDE drops the second one, the library's
+    filesMatching('dev/lavalink/youtube/http/YoutubeOauth2Handler.class') {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+    // RU: старый встроенный YouTube из LavaPlayer тоже умеет входить в аккаунт; играет у нас youtube-source,
+    //     а на этот пакет ссылается только AudioSourceManagers.registerRemoteSources, который мы не зовём
+    // US: LavaPlayer's old built-in YouTube can log in to an account too; youtube-source is what plays here,
+    //     and only AudioSourceManagers.registerRemoteSources refers to this package, which we never call
+    exclude 'com/sedmelluq/discord/lavaplayer/source/youtube/**'
 }
