@@ -27,6 +27,12 @@ neoForge {
             sourceSet sourceSets.main
         }
     }
+    runs {
+        client {
+            client()
+            gameDirectory = project.file('run')
+        }
+    }
 }
 
 configurations {

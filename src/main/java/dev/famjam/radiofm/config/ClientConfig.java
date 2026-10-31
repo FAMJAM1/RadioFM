@@ -11,7 +11,7 @@ public final class ClientConfig {
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         RADIO_VOLUME = builder
-                .comment("RU: громкость всех радио на своём канале, в процентах, до 200 | US: volume of all radios on our own channel, in percent, up to 200")
+                .comment("RU: громкость всех радио на своём канале, до 200% | US: volume of all radios on our own channel, up to 200%")
                 .defineInRange("radioVolume", 100, 0, MAX_VOLUME);
         SPEC = builder.build();
     }

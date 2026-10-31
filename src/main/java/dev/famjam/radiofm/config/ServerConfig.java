@@ -27,9 +27,11 @@ public class ServerConfig {
 
         maxActiveRadios = builder
                 .comment("RU: сколько радио может играть одновременно на всём сервере;",
-                        "    каждое держит свои потоки и открытое соединение",
+                        "    каждое держит свои потоки и открытое соединение.",
+                        "    Лимит на одного игрока - игровое правило radiofm:max",
                         "US: how many radios may play at once across the whole server; each one",
-                        "    holds its own streams and an open connection")
+                        "    holds its own streams and an open connection.",
+                        "    The per-player cap is the game rule radiofm:max")
                 .defineInRange("maxActiveRadios", 32, 1, 512);
 
         maxTracksPerRadio = builder
