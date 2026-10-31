@@ -1,0 +1,20 @@
+// RU: заготовка, в settings.gradle ещё не подключена: Fabric-часть в работе
+// US: a scaffold, not wired into settings.gradle yet: the Fabric part is in progress
+plugins {
+    id 'fabric-loom'
+}
+
+base.archivesName = archives_base_name
+version = "${mod_base_version}+${minecraft_version}.fabric"
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    modImplementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forgeconfigapiport_version}"
+}
+
+loom {
+    accessWidenerPath = file('src/main/resources/radiofm.accesswidener')
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "radiofm",
+  "version": "${version}",
+  "name": "RadioFM",
+  "description": "A radio that plays on its own or through Simple Voice Chat or Plasmo Voice",
+  "license": "MIT",
+  "icon": "radiofm_logo.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["dev.famjam.radiofm.fabric.RadioFMFabric"],
+    "client": ["dev.famjam.radiofm.fabric.RadioFMFabricClient"],
+    "voicechat": ["dev.famjam.radiofm.voice.svc.RadioVoicechatPlugin"]
+  },
+  "accessWidener": "radiofm.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.16",
+    "minecraft": "1.21.1",
+    "java": ">=21",
+    "fabric-api": "*",
+    "forgeconfigapiport": ">=21.1"
+  },
+  "suggests": {
+    "voicechat": "*",
+    "plasmovoice": "*"
+  }
+}
